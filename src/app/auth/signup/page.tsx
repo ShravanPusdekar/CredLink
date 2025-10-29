@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Mail, Eye, EyeOff, Loader2, Check } from "lucide-react"
@@ -17,23 +17,92 @@ export default function SignupPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [identifier, setIdentifier] = useState('')
+  const [identifierType, setIdentifierType] = useState<'email' | 'phone' | null>(null)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([])
 
-  const { register, handleSubmit, formState: { errors, isSubmitting }, watch } = useForm<SignupForm>({
+  const { register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       fullName: '',
-      email: '',
-      phone: '',
       password: '',
       confirmPassword: ''
     }
   })
 
-  const onSubmit = async (data: SignupForm) => {
+  // Detect input type
+  const detectInputType = (value: string) => {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const phonePattern = /^\d{10}$/
+    if (emailPattern.test(value)) return 'email'
+    if (phonePattern.test(value)) return 'phone'
+    return null
+  }
+
+  const handleIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.trim()
+    setIdentifier(value)
+    setError('')
+    const type = detectInputType(value)
+    setIdentifierType(type)
+    if (value.length > 0) {
+      setOtpSent(true)
+    } else {
+      setOtpSent(false)
+    }
+  }
+
+  const handleSendOTP = async () => {
+    if (!identifierType || identifierType !== 'phone') {
+      setError('Please enter a valid phone number')
+      return
+    }
+    setLoading(true)
+    setError('')
     try {
-      // Add your signup logic here
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      setOtpSent(true)
+    } catch {
+      setError('Failed to send OTP. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOtpChange = (value: string, index: number) => {
+    if (value.length > 1) value = value[0]
+    const newOtp = [...otp]
+    newOtp[index] = value.replace(/\D/g, '')
+    setOtp(newOtp)
+    setError('')
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus()
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus()
+    }
+  }
+
+  const onSubmit = async (data: SignupForm) => {
+    if (identifierType === 'phone') {
+      // Simulate sending OTP and redirect to OTP page
+      toast.loading('Sending OTP...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      toast.success('OTP sent!')
+      router.push(`/auth/verify-otp?phone=${encodeURIComponent(identifier)}`)
+      return
+    }
+    // For email signup, continue as before
+    try {
       toast.loading('Creating your account...')
-      await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000))
       toast.success('Account created successfully!')
       router.push('/auth/login')
     } catch (error) {
@@ -81,36 +150,21 @@ export default function SignupPage() {
             </div>
 
             <div className="auth-input-group">
-              <label htmlFor="email" className="label">
-                Email Address
+              <label htmlFor="identifier" className="label">
+                Email or Phone Number
               </label>
               <input
-                id="email"
-                type="email"
-                {...register('email')}
+                id="identifier"
+                type="text"
+                value={identifier}
+                onChange={handleIdentifierChange}
                 className="auth-input"
-                placeholder="Enter your email"
+                placeholder="Enter email or phone number"
+                maxLength={50}
+                autoComplete="email tel"
               />
-              {errors.email && (
-                <p className="form-error">{errors.email.message}</p>
-              )}
-            </div>
-
-            <div className="auth-input-group">
-              <label htmlFor="phone" className="label">
-                Phone Number
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                maxLength={10}
-                {...register('phone')}
-                className="auth-input"
-                placeholder="Enter your phone number"
-              />
-              {errors.phone && (
-                <p className="form-error">{errors.phone.message}</p>
-              )}
+              {/* OTP input removed. OTP is now handled on a separate page after account creation. */}
+              {error && <p className="form-error mt-2">{error}</p>}
             </div>
 
             <div className="auth-input-group">
@@ -127,13 +181,17 @@ export default function SignupPage() {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowPassword(!showPassword);
+                  }}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  {!showPassword ? (
+                    <EyeOff className="h-5 w-5" aria-label="Show password" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-5 w-5" aria-label="Hide password" />
                   )}
                 </button>
               </div>
@@ -156,13 +214,17 @@ export default function SignupPage() {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  tabIndex={-1}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowConfirmPassword(!showConfirmPassword);
+                  }}
                 >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  {!showConfirmPassword ? (
+                    <EyeOff className="h-5 w-5" aria-label="Show password" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-5 w-5" aria-label="Hide password" />
                   )}
                 </button>
               </div>
@@ -175,10 +237,10 @@ export default function SignupPage() {
           <div>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="auth-submit-button"
+              disabled={isSubmitting || loading || !identifier || !watch('fullName') || !watch('password') || !watch('confirmPassword')}
+              className={`auth-submit-button ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
-              {isSubmitting ? (
+              {(isSubmitting || loading) ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 'Create Account'
