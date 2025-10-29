@@ -69,15 +69,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0F1419;
-    --background-white: #1A1F26;
-    --foreground: #E8F8F3;
-    --text-primary: #E8F8F3;
-    --text-secondary: #9CA3AF;
-  }
-}
+/* Dark theme removed per user request: site will use the light theme only. */
 
 /* ========================================
    Base Styles
