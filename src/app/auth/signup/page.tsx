@@ -42,67 +42,62 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-2xl shadow-xl">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 relative mb-4">
-            <div className="absolute inset-0 bg-green-500 rounded-xl transform rotate-6"></div>
-            <div className="absolute inset-0 bg-green-600 rounded-xl transform -rotate-6"></div>
-            <div className="absolute inset-0 bg-white rounded-xl flex items-center justify-center">
-              <span className="text-2xl font-bold text-green-600">C</span>
-            </div>
-          </div>
-          
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <Link href="/" className="block">
+            <h1 className="auth-logo">CredLink</h1>
+          </Link>
+          <h2 className="auth-title">
             Create your account
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="auth-subtitle">
             Already have an account?{' '}
-            <Link href="/auth/login" className="font-medium text-green-600 hover:text-green-500 transition-colors">
-              login 
+            <Link href="/auth/login" className="text-primary-green hover:text-primary-green-dark">
+              Sign in
             </Link>
           </p>
         </div>
 
         <form
-          className="mt-8 space-y-6"
+          className="auth-form"
           onSubmit={handleSubmit(onSubmit)}
         >
-          <div className="rounded-2xl shadow-sm space-y-4">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-4">
+            <div className="auth-input-group">
+              <label htmlFor="fullName" className="label">
                 Full Name
               </label>
               <input
                 id="fullName"
                 type="text"
                 {...register('fullName')}
-                className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200"
+                className="auth-input"
                 placeholder="Enter your full name"
               />
               {errors.fullName && (
-                <p className="text-red-500 text-xs mt-1">{errors.fullName.message}</p>
+                <p className="form-error">{errors.fullName.message}</p>
               )}
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="auth-input-group">
+              <label htmlFor="email" className="label">
                 Email Address
               </label>
               <input
                 id="email"
                 type="email"
                 {...register('email')}
-                className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200"
+                className="auth-input"
                 placeholder="Enter your email"
               />
               {errors.email && (
-                <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+                <p className="form-error">{errors.email.message}</p>
               )}
             </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="auth-input-group">
+              <label htmlFor="phone" className="label">
                 Phone Number
               </label>
               <input
@@ -110,16 +105,16 @@ export default function SignupPage() {
                 type="tel"
                 maxLength={10}
                 {...register('phone')}
-                className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200"
+                className="auth-input"
                 placeholder="Enter your phone number"
               />
               {errors.phone && (
-                <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>
+                <p className="form-error">{errors.phone.message}</p>
               )}
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="auth-input-group">
+              <label htmlFor="password" className="label">
                 Password
               </label>
               <div className="relative">
@@ -127,7 +122,7 @@ export default function SignupPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   {...register('password')}
-                  className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200"
+                  className="auth-input"
                   placeholder="Create a strong password"
                 />
                 <button
@@ -143,12 +138,12 @@ export default function SignupPage() {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>
+                <p className="form-error">{errors.password.message}</p>
               )}
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="auth-input-group">
+              <label htmlFor="confirmPassword" className="label">
                 Confirm Password
               </label>
               <div className="relative">
@@ -156,7 +151,7 @@ export default function SignupPage() {
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   {...register('confirmPassword')}
-                  className="appearance-none rounded-xl relative block w-full px-4 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent focus:z-10 sm:text-sm transition-all duration-200"
+                  className="auth-input"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -172,23 +167,23 @@ export default function SignupPage() {
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-red-500 text-xs mt-1">{errors.confirmPassword.message}</p>
+                <p className="form-error">{errors.confirmPassword.message}</p>
               )}
             </div>
           </div>
 
           <div>
-            <Button
+            <button
               type="submit"
               disabled={isSubmitting}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="auth-submit-button"
             >
               {isSubmitting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 'Create Account'
               )}
-            </Button>
+            </button>
           </div>
         </form>
       </div>

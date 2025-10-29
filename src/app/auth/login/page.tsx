@@ -45,24 +45,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link href="/" className="flex justify-center">
-          <h1 className="text-3xl font-bold text-blue-600">CredLink</h1>
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Sign in to your account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Or{' '}
-          <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
-            create a new account
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <Link href="/" className="block">
+            <h1 className="auth-logo">CredLink</h1>
           </Link>
-        </p>
-      </div>
-
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <h2 className="auth-title">
+            Sign in to your account
+          </h2>
+          <p className="auth-subtitle">
+            Or{' '}
+            <Link href="/auth/signup" className="text-primary-green hover:text-primary-green-dark">
+              create a new account
+            </Link>
+          </p>
+        </div>
           {/* Login Method Toggle */}
           <div className="flex rounded-lg bg-gray-100 p-1 mb-6">
             <button
@@ -89,11 +87,11 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="auth-form">
             {loginMethod === 'email' ? (
               <>
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                <div className="auth-input-group">
+                  <label htmlFor="email" className="label">
                     Email address
                   </label>
                   <div className="mt-1">
@@ -105,14 +103,14 @@ export default function LoginPage() {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="auth-input"
                       placeholder="Enter your email"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                <div className="auth-input-group">
+                  <label htmlFor="password" className="label">
                     Password
                   </label>
                   <div className="mt-1 relative">
@@ -124,7 +122,7 @@ export default function LoginPage() {
                       required
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="auth-input"
                       placeholder="Enter your password"
                     />
                     <button
@@ -143,8 +141,8 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                <div className="auth-input-group">
+                  <label htmlFor="phone" className="label">
                     Phone number
                   </label>
                   <div className="mt-1">
@@ -156,7 +154,7 @@ export default function LoginPage() {
                       required
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="auth-input"
                       placeholder="+1 (555) 000-0000"
                     />
                   </div>
@@ -172,8 +170,8 @@ export default function LoginPage() {
                     {loading ? 'Sending...' : 'Send OTP'}
                   </Button>
                 ) : (
-                  <div>
-                    <label htmlFor="otp" className="block text-sm font-medium text-gray-700">
+                  <div className="auth-input-group">
+                    <label htmlFor="otp" className="label">
                       Enter OTP
                     </label>
                     <div className="mt-1">
@@ -184,7 +182,7 @@ export default function LoginPage() {
                         required
                         value={formData.otp}
                         onChange={handleInputChange}
-                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        className="auth-input"
                         placeholder="Enter 6-digit OTP"
                         maxLength={6}
                       />
@@ -228,32 +226,26 @@ export default function LoginPage() {
                   )}
                 </div>
 
-                <Button
+                <button
                   type="submit"
                   disabled={loading}
-                  className="w-full"
+                  className="auth-submit-button"
                 >
                   {loading ? 'Signing in...' : 'Sign in'}
-                </Button>
+                </button>
               </>
             )}
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
-              </div>
-            </div>
+          <div className="auth-divider">
+            <span className="auth-divider-text">Or continue with</span>
+          </div>
 
-            <div className="mt-6">
+            <div>
               <button
                 onClick={() => signIn('google')}
                 type="button"
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="social-login-button"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -264,8 +256,6 @@ export default function LoginPage() {
                 <span className="ml-2">Continue with Google</span>
               </button>
             </div>
-          </div>
-        </div>
       </div>
     </div>
   )
