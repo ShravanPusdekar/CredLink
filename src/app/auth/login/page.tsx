@@ -70,6 +70,7 @@ export default function LoginPage() {
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
+              suppressHydrationWarning
             >
               <Mail className="h-4 w-4 mr-2" />
               Email
@@ -81,13 +82,14 @@ export default function LoginPage() {
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               }`}
+              suppressHydrationWarning
             >
               <Phone className="h-4 w-4 mr-2" />
               Phone
             </button>
           </div>
 
-          <form onSubmit={handleLogin} className="auth-form">
+          <form onSubmit={handleLogin} className="auth-form" suppressHydrationWarning>
             {loginMethod === 'email' ? (
               <>
                 <div className="auth-input-group">
@@ -105,6 +107,7 @@ export default function LoginPage() {
                       onChange={handleInputChange}
                       className="auth-input"
                       placeholder="Enter your email"
+                      suppressHydrationWarning
                     />
                   </div>
                 </div>
@@ -124,11 +127,13 @@ export default function LoginPage() {
                       onChange={handleInputChange}
                       className="auth-input"
                       placeholder="Enter your password"
+                      suppressHydrationWarning
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      suppressHydrationWarning
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4 text-gray-400" />
@@ -156,6 +161,7 @@ export default function LoginPage() {
                       onChange={handleInputChange}
                       className="auth-input"
                       placeholder="+1 (555) 000-0000"
+                      suppressHydrationWarning
                     />
                   </div>
                 </div>
@@ -166,6 +172,7 @@ export default function LoginPage() {
                     onClick={handleSendOTP}
                     disabled={loading || !formData.phone}
                     className="w-full"
+                    suppressHydrationWarning
                   >
                     {loading ? 'Sending...' : 'Send OTP'}
                   </Button>
@@ -185,6 +192,7 @@ export default function LoginPage() {
                         className="auth-input"
                         placeholder="Enter 6-digit OTP"
                         maxLength={6}
+                        suppressHydrationWarning
                       />
                     </div>
                     <p className="mt-2 text-sm text-gray-600">
@@ -193,6 +201,7 @@ export default function LoginPage() {
                         type="button"
                         onClick={handleSendOTP}
                         className="text-blue-600 hover:text-blue-500"
+                        suppressHydrationWarning
                       >
                         Resend
                       </button>
@@ -211,6 +220,7 @@ export default function LoginPage() {
                       name="remember-me"
                       type="checkbox"
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      suppressHydrationWarning
                     />
                     <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
                       Remember me
@@ -230,6 +240,7 @@ export default function LoginPage() {
                   type="submit"
                   disabled={loading}
                   className="auth-submit-button"
+                  suppressHydrationWarning
                 >
                   {loading ? 'Signing in...' : 'Sign in'}
                 </button>
@@ -246,6 +257,7 @@ export default function LoginPage() {
                 onClick={() => signIn('google')}
                 type="button"
                 className="social-login-button"
+                suppressHydrationWarning
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
