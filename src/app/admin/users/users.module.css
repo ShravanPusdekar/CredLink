@@ -1,0 +1,261 @@
+.container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f6ff, #ffffff);
+  padding: 40px;
+  font-family: "Poppins", sans-serif;
+  color: #1e293b;
+}
+
+/* ===== Header ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.header h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+/* ===== Filter Section ===== */
+.filterCard {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  background: #fff;
+  padding: 20px;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  margin-bottom: 25px;
+}
+
+.filterSearch {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 400px;
+  gap: 10px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+
+.filterSearch input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 15px;
+}
+
+.searchIcon {
+  color: #2563eb;
+  width: 20px;
+  height: 20px;
+}
+
+.filterActions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.filterSelect {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 15px;
+  background: #fff;
+  color: #1e293b;
+}
+
+.filterBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterBtn:hover {
+  background: #1e40af;
+}
+
+/* ===== Table ===== */
+.tableContainer {
+  overflow-x: auto;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+/* ===== Status & Actions ===== */
+.statusBadge {
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.inactive {
+  background: #fef9c3;
+  color: #92400e;
+}
+
+.blocked {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.actionBtns {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.editIcon {
+  color: #2563eb;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.deleteIcon {
+  color: #dc2626;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+.moreIcon {
+  color: #6b7280;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+/* ===== Mobile Cards ===== */
+.mobileList {
+  display: none;
+}
+
+.userCard {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.userCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.userCard h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+
+.userCard p {
+  font-size: 14px;
+  color: #475569;
+}
+
+.userCardBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.createdDate {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.mobileActions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.loadingText {
+  text-align: center;
+  font-size: 16px;
+  color: #2563eb;
+  margin-top: 20px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .tableContainer {
+    display: none;
+  }
+
+  .mobileList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .filterCard {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .filterActions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .filterBtn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .filterSelect {
+    flex: 1;
+  }
+
+  .filterSearch {
+    width: 100%;
+  }
+}
