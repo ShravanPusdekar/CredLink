@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Search, X, Trash2 } from "lucide-react";
 
 type MessageStatus = "New" | "Read" | "Replied" | "Pending" | "Archived" | "Deleted";
@@ -17,6 +17,13 @@ interface MessageItem {
   starred: boolean;
   tag: MessageTag;
   senderId: string;
+  // Full chronological thread for this conversation (incoming/outgoing)
+  thread?: Array<{
+    id?: string;
+    text: string;
+    date: string;
+    direction: 'in' | 'out';
+  }>;
   replies?: {
     text: string;
     date: string;
@@ -57,6 +64,9 @@ export default function MessagesPage() {
       if (response.ok) {
         const data = await response.json();
 
+        const inboxMessages = data.messages || [];
+        const sentMessages = data.sentMessages || [];
+
         const sendersMap: Record<string, { id: string; fullName?: string; email?: string }> = {};
         (data.senders || []).forEach((s: any) => {
           sendersMap[s.id] = s;
@@ -77,24 +87,67 @@ export default function MessagesPage() {
           FEEDBACK: 'Feedback',
         };
 
-        const mapped: MessageItem[] = (data.messages || []).map((msg: any) => {
-          const sender = sendersMap[msg.senderId] || {};
-          return {
-            id: msg.id,
-            name: sender.fullName || "Unknown",
-            email: sender.email || "",
-            message: msg.text || msg.message || "",
-            date: msg.createdAt || msg.date || new Date().toISOString(),
-            status: statusMap[String(msg.status)] || "New",
-            read: typeof msg.read === 'boolean' ? msg.read : false,
-            starred: false,
-            tag: tagMap[String(msg.tag)] || null,
-            senderId: msg.senderId,
-            replies: [],
-          } as MessageItem;
+        // Build per-user conversation threads (incoming + outgoing)
+        const inboxBySender = new Map<string, any[]>();
+        (inboxMessages as any[]).forEach((m: any) => {
+          const arr = inboxBySender.get(m.senderId) || [];
+          arr.push(m);
+          inboxBySender.set(m.senderId, arr);
         });
 
-        setMessages(mapped);
+        const sentByReceiver = new Map<string, any[]>();
+        (sentMessages as any[]).forEach((m: any) => {
+          if (!m.receiverId) return;
+          const arr = sentByReceiver.get(m.receiverId) || [];
+          arr.push(m);
+          sentByReceiver.set(m.receiverId, arr);
+        });
+
+        const allPartyIds = new Set<string>([
+          ...Array.from(inboxBySender.keys()),
+          ...Array.from(sentByReceiver.keys()),
+        ]);
+
+        const groupedBySender = new Map<string, MessageItem>();
+        for (const partyId of allPartyIds) {
+          const sender = sendersMap[partyId] || {};
+
+          // Combine incoming and outgoing, then sort by date ASC so latest is at the bottom
+          const combined = [
+            ...((inboxBySender.get(partyId) || []).map((m: any) => ({
+              id: m.id,
+              text: m.text || m.message || '',
+              date: m.createdAt || m.date || new Date().toISOString(),
+              direction: 'in' as const,
+            }))),
+            ...((sentByReceiver.get(partyId) || []).map((m: any) => ({
+              id: m.id,
+              text: m.text || m.message || '',
+              date: m.createdAt || m.date || new Date().toISOString(),
+              direction: 'out' as const,
+            }))),
+          ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+          const latest = combined[combined.length - 1] || null;
+
+          if (latest) {
+            groupedBySender.set(partyId, {
+              id: latest.id,
+              name: sender.fullName || 'Unknown',
+              email: sender.email || '',
+              message: latest.text,
+              date: latest.date,
+              status: 'Read',
+              read: true,
+              starred: false,
+              tag: null,
+              senderId: partyId,
+              thread: combined,
+            });
+          }
+        }
+
+        setMessages(Array.from(groupedBySender.values()));
       }
       console.log(response);
     }catch(err){
@@ -120,6 +173,15 @@ export default function MessagesPage() {
   const [replyId, setReplyId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+
+  const conversationRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!detailId) return;
+    const container = conversationRef.current;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
+  }, [detailId, messages]);
 
   const filteredMessages = useMemo(() => {
     let filtered = messages;
@@ -202,11 +264,12 @@ export default function MessagesPage() {
           ...m, 
           status: "Replied", 
           read: true,
-          replies: [
-            ...(m.replies || []),
+          thread: [
+            ...(m.thread || []),
             {
               text: replyText,
-              date: new Date().toISOString()
+              date: new Date().toISOString(),
+              direction: 'out',
             }
           ]
         } : m));
@@ -254,7 +317,7 @@ export default function MessagesPage() {
       className="no-scrollbar"
       style={{
         minHeight: "100vh",
-        backgroundColor: "#F3F2EF",
+        backgroundColor: "transparent",
         overflowX: "hidden",
       }}
     >
@@ -264,7 +327,7 @@ export default function MessagesPage() {
           maxWidth: "100%",
           margin: 0,
           boxSizing: "border-box",
-          padding: isMobile ? "0px" : "24px", 
+          padding: "0px",
         }}
       >
         {/* Full-page Message Box */}
@@ -275,8 +338,8 @@ export default function MessagesPage() {
         }}>
           <div style={{
             backgroundColor: "#FFFFFF",
-            borderRadius: isMobile ? 0 : 8,
-            boxShadow: isMobile ? "none" : "0 0 0 1px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.08)",
+            borderRadius: 8,
+            boxShadow: "0 0 0 1px rgba(0,0,0,0.06)",
             minHeight: isMobile ? "100vh" : "auto", 
           }}>
             {/* Search Bar */}
@@ -379,7 +442,7 @@ export default function MessagesPage() {
                       /* --- MOBILE LAYOUT --- */
                       <div>
                         {/* Top Row: Avatar, Info, Actions */}
-                        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                           {/* Avatar */}
                           <div style={{
                             width: 48, height: 48, borderRadius: "50%", backgroundColor: "#0A66C2",
@@ -388,18 +451,15 @@ export default function MessagesPage() {
                           }}>
                             {getInitials(m.name)}
                           </div>
-                          {/* Content Header (Name, Email, Date, Trash) */}
+                          {/* Content Header (Name, Date, Trash) */}
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                   <span style={{ fontSize: 14, fontWeight: m.read ? 400 : 600, color: "#000000" }}>
                                     {m.name}
                                   </span>
                                 </div>
-                                <p style={{ fontSize: 13, color: "#666666", marginTop: 2 }}>
-                                  {m.email}
-                                </p>
                               </div>
                               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                                 <span style={{ fontSize: 12, color: "#666666", whiteSpace: "nowrap" }}>
@@ -464,7 +524,7 @@ export default function MessagesPage() {
                       </div>
                     ) : (
                       /* --- DESKTOP LAYOUT (Original) --- */
-                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                         {/* Avatar */}
                         <div style={{
                           width: 48, height: 48, borderRadius: "50%", backgroundColor: "#0A66C2",
@@ -477,16 +537,13 @@ export default function MessagesPage() {
                         {/* Content (all in one block) */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           {/* Content Header */}
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                                 <span style={{ fontSize: 14, fontWeight: m.read ? 400 : 600, color: "#000000" }}>
                                   {m.name}
                                 </span>
                               </div>
-                              <p style={{ fontSize: 13, color: "#666666", marginTop: 2 }}>
-                                {m.email}
-                              </p>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <span style={{ fontSize: 12, color: "#666666", whiteSpace: "nowrap" }}>
@@ -544,25 +601,39 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* Detail Modal */}
+      {/* Detail Full-Page View */}
       {detailId && messages.find(m => m.id === detailId) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setDetailId(null)}>
+        <div
+          className="fixed right-0 bottom-0 left-0 lg:left-72 z-50 bg-white"
+          style={{
+            top: 64,
+            padding: isMobile ? 0 : 12,
+            display: "flex",
+            flexDirection: "column",
+            height: "calc(100vh - 64px)",
+            maxHeight: "calc(100vh - 64px)",
+            boxSizing: "border-box",
+            overflow: "hidden",
+          }}
+        >
           <div
-            onClick={e => e.stopPropagation()}
             style={{
               backgroundColor: "#FFFFFF",
               borderRadius: 8,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.06)",
               width: "100%",
-              maxWidth: 640,
-              maxHeight: "90vh",
-              overflowY: "auto",
+              height: "auto",
+              maxWidth: "100%",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
             }}
           >
             {(() => {
               const msg = messages.find(m => m.id === detailId)!;
               return (
-                <div>
+                <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
                   {/* Header */}
                   <div style={{ 
                     padding: "16px 20px", 
@@ -597,11 +668,21 @@ export default function MessagesPage() {
                   </div>
 
                   {/* Content */}
-                  <div style={{ padding: 0, display: "flex", flexDirection: "column", height: "100%" }}>
+                  <div style={{ padding: 0, display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
                     {/* Meta strip removed: tag/status badges hidden per request */}
 
-                    {/* Scrollable conversation area */}
-                    <div className="no-scrollbar" style={{ padding: 20, overflowY: "auto", maxHeight: "60vh" }}>
+                    {/* Scrollable conversation area + sticky composer */}
+                    <div
+                      ref={conversationRef}
+                      style={{
+                        padding: isMobile ? 12 : 20,
+                        paddingBottom: isMobile ? 100 : 110,
+                        overflowY: "auto",
+                        flex: 1,
+                        minHeight: 0,
+                        maxHeight: "100%",
+                      }}
+                    >
                       {/* Date separator */}
                       <div style={{ display: "flex", alignItems: "center", gap: 12, color: "#666", fontSize: 12, margin: "8px 0 16px" }}>
                         <div style={{ flex: 1, height: 1, background: "#E0E0E0" }} />
@@ -609,86 +690,104 @@ export default function MessagesPage() {
                         <div style={{ flex: 1, height: 1, background: "#E0E0E0" }} />
                       </div>
 
-                      {/* Incoming message (sender) */}
-                      <div style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 16 }}>
-                        <div style={{
-                          width: 36, height: 36, borderRadius: "50%", background: "#0A66C2", color: "#fff",
-                          display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 600
-                        }}>{getInitials(msg.name)}</div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                            <span style={{ fontWeight: 700, color: "#000" }}>{msg.name}</span>
-                            <span style={{ fontSize: 12, color: "#666" }}>{formatDate(msg.date)}</span>
+                      {/* Full chronological thread (latest at bottom) */}
+                      {(msg.thread && msg.thread.length > 0 ? msg.thread : [
+                        { text: msg.message, date: msg.date, direction: 'in' as const }
+                      ]).map((item, idx) => {
+                        const isIncoming = item.direction === 'in';
+                        return (
+                          <div key={`${item.id || idx}`} style={{
+                            display: 'flex',
+                            gap: 12,
+                            alignItems: 'flex-start',
+                            marginBottom: 12,
+                            justifyContent: isIncoming ? 'flex-start' : 'flex-end',
+                          }}>
+                            {isIncoming && (
+                              <div style={{
+                                width: 36, height: 36, borderRadius: '50%', background: '#0A66C2', color: '#fff',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600
+                              }}>{getInitials(msg.name)}</div>
+                            )}
+                            <div style={{ maxWidth: '70%' }}>
+                              <div style={{ textAlign: isIncoming ? 'left' : 'right', fontSize: 12, color: '#666', marginBottom: 4 }}>
+                                {isIncoming ? `${msg.name} • ${formatDate(item.date)}` : `You • ${formatDate(item.date)}`}
+                              </div>
+                              <div style={{
+                                background: isIncoming ? '#F3F6F8' : '#E6F3FF',
+                                borderRadius: 8,
+                                padding: 12,
+                                color: '#000',
+                                lineHeight: 1.5,
+                                whiteSpace: 'pre-line',
+                              }}>{item.text}</div>
+                            </div>
+                            {!isIncoming && (
+                              <div style={{
+                                width: 28, height: 28, borderRadius: '50%', background: '#E0E0E0',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#555'
+                              }}>You</div>
+                            )}
                           </div>
-                          <div style={{
-                            marginTop: 6,
-                            background: "#F3F6F8",
-                            borderRadius: 8,
-                            padding: 12,
-                            color: "#000",
-                            lineHeight: 1.5,
-                            whiteSpace: "pre-line",
-                          }}>{msg.message}</div>
-                        </div>
-                      </div>
+                        );
+                      })}
 
-                      {/* Replies (our messages) */}
-                      {(msg.replies || []).map((reply, idx) => (
-                        <div key={idx} style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 12, justifyContent: "flex-end" }}>
-                          <div style={{ maxWidth: "70%" }}>
-                            <div style={{ textAlign: "right", fontSize: 12, color: "#666", marginBottom: 4 }}>You • {formatDate(reply.date)}</div>
-                            <div style={{
-                              background: "#E6F3FF",
-                              borderRadius: 8,
+                      {/* Composer (sticky at bottom) */}
+                      <div
+                        style={{
+                          position: "sticky",
+                          bottom: 0,
+                          borderTop: "3px solid #2A8C2F20",
+                          paddingTop: 16,
+                          paddingBottom: `calc(8px + env(safe-area-inset-bottom))`,
+                          backgroundColor: "#FFFFFF",
+                          zIndex: 10,
+                        }}
+                      >
+                        <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                          <textarea
+                            value={replyText}
+                            onChange={e => setReplyText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                if (replyText.trim()) {
+                                  sendReply();
+                                }
+                              }
+                            }}
+                            placeholder="Write a message..."
+                            className="w-full resize-none"
+                            style={{
+                              minHeight: 56,
+                              maxHeight: 140,
                               padding: 12,
-                              color: "#000",
-                              lineHeight: 1.5,
-                              whiteSpace: "pre-line",
-                            }}>{reply.text}</div>
-                          </div>
-                          <div style={{
-                            width: 28, height: 28, borderRadius: "50%", background: "#E0E0E0",
-                            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#555"
-                          }}>You</div>
+                              border: "1px solid #E0E0E0",
+                              borderRadius: 12,
+                              outline: "none",
+                              fontSize: 14,
+                              fontFamily: "inherit",
+                              backgroundColor: "#FAFAFA",
+                              overflowY: "auto",
+                            }}
+                          />
+                          <button
+                            onClick={sendReply}
+                            disabled={!replyText.trim()}
+                            style={{
+                              padding: "10px 16px",
+                              backgroundColor: !replyText.trim() ? "#B0B0B0" : "#0A66C2",
+                              color: "#FFFFFF",
+                              borderRadius: 20,
+                              fontWeight: 600,
+                              fontSize: 14,
+                              border: "none",
+                              cursor: !replyText.trim() ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            Send
+                          </button>
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Composer (sticky bottom) */}
-                    <div style={{ borderTop: "3px solid #2A8C2F20", padding: 16 }}>
-                      <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-                        <textarea
-                          value={replyText}
-                          onChange={e => setReplyText(e.target.value)}
-                          placeholder="Write a message..."
-                          className="w-full resize-none"
-                          style={{
-                            minHeight: 80,
-                            padding: 12,
-                            border: "1px solid #E0E0E0",
-                            borderRadius: 12,
-                            outline: "none",
-                            fontSize: 14,
-                            fontFamily: "inherit",
-                            backgroundColor: "#FAFAFA",
-                          }}
-                        />
-                        <button
-                          onClick={sendReply}
-                          disabled={!replyText.trim()}
-                          style={{
-                            padding: "10px 16px",
-                            backgroundColor: !replyText.trim() ? "#B0B0B0" : "#0A66C2",
-                            color: "#FFFFFF",
-                            borderRadius: 20,
-                            fontWeight: 600,
-                            fontSize: 14,
-                            border: "none",
-                            cursor: !replyText.trim() ? "not-allowed" : "pointer",
-                          }}
-                        >
-                          Send
-                        </button>
                       </div>
                     </div>
                   </div>

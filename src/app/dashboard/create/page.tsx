@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 // ====================================================================
 // START: DigitalCardPreview Component (Modified to accept theme)
@@ -32,12 +33,12 @@ const DigitalCardPreview: React.FC<DigitalCardProps> = ({
   title = "",
   company = "",
   location = "",
-  about = "",
-  skills = "",
-  portfolio = "",
-  experience = "",
-  services = "",
-  review = "",
+  about = "Crafting engaging content & SEO strategies",
+  skills = "SEO, Content Creation, Analytics, Social Media",
+  portfolio = "[Link] Latest Campaigns",
+  experience = "Lead SEO Specialist (2021-Present)",
+  services = "SEO Audits, Slogan Content Campaigns", // Added
+  review = "John transformed our online presence!, Happy Client", // Added
   photo = "",
   cover = "",
   email = "",
@@ -179,45 +180,35 @@ const DigitalCardPreview: React.FC<DigitalCardProps> = ({
           )}
           {location && <p style={{ margin: "10px 0 0", fontSize: "14px", color: "#FFFFFF" }}>{location}</p>}
 
-          {/* Social Row - Only show if any links exist */}
-          {(email || phone || linkedin || website) && (
-            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}> 
-              {/* Mail - Only show if email exists */}
-              {email && (
-                <a href={`mailto:${email}`} style={{ width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16v16H4z" opacity="0"/>
-                    <path d="M4 8l8 5 8-5"/>
-                    <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
-                  </svg>
-                </a>
-              )}
-              {/* Phone - Only show if phone exists */}
-              {phone && (
-                <a href={`tel:${phone}`} style={{ width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-                  </svg>
-                </a>
-              )}
-              {/* LinkedIn - Only show if linkedin exists */}
-              {linkedin && (
-                <a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4zM8.5 8.5h3.8v1.98h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V23h-4v-6.3c0-1.5-.03-3.44-2.1-3.44-2.1 0-2.42 1.64-2.42 3.34V23h-4z"/></svg>
-                </a>
-              )}
-              {/* Website - Only show if website exists */}
-              {website && (
-                <a href={website} target="_blank" rel="noopener noreferrer" style={{ width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="2" y1="12" x2="22" y2="12"/>
-                    <path d="M12 2a15.3 15.3 0 010 20a15.3 15.3 0 010-20z"/>
-                  </svg>
-                </a>
-              )}
-            </div>
-          )}
+          {/* Social Row */}
+          <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}> 
+            {/* Mail */}
+            <a href={`mailto:${email || 'example@mykard.com'}`} style={{ width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 4h16v16H4z" opacity="0"/>
+                <path d="M4 8l8 5 8-5"/>
+                <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
+              </svg>
+            </a>
+            {/* Phone */}
+            <a href={`tel:${phone || '+911234567890'}`} style={{ width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+            </a>
+            {/* LinkedIn */}
+            <a href={linkedin || 'https://linkedin.com'} target="_blank" rel="noopener noreferrer" style={{ width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4zM8.5 8.5h3.8v1.98h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V23h-4v-6.3c0-1.5-.03-3.44-2.1-3.44-2.1 0-2.42 1.64-2.42 3.34V23h-4z"/></svg>
+            </a>
+            {/* Globe */}
+            <a href={website || 'https://mykard.com'} target="_blank" rel="noopener noreferrer" style={{ width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 010 20a15.3 15.3 0 010-20z"/>
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -279,14 +270,18 @@ const DigitalCardPreview: React.FC<DigitalCardProps> = ({
   );
 };
 
+// ====================================================================
+// START: Template-Specific Card Components
+// ====================================================================
+
 // Flat Template
 const FlatCardPreview: React.FC<DigitalCardProps> = ({
-  name, title, company, location, about, photo, cover,
-  email, phone, linkedin, website, themeColor1, themeColor2, fontFamily,
-  skills, portfolio, experience, services, review
+  name = "", title = "", company = "", location = "", about = "", photo = "", cover = "",
+  email = "", phone = "", linkedin = "", website = "", themeColor1, themeColor2, fontFamily,
+  skills = "", portfolio = "", experience = "", services = "", review = ""
 }) => {
-  const firstLetter = name ? name.charAt(0).toUpperCase() : "";
-
+  const firstLetter = name ? name.charAt(0).toUpperCase() : "J";
+  
   type Section = 'Services' | 'Portfolio' | 'Skills' | 'Experience' | 'Review';
   const [activePanel, setActivePanel] = useState<Section | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -298,6 +293,7 @@ const FlatCardPreview: React.FC<DigitalCardProps> = ({
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  // Updated to use props
   const skillsList = skills.split(',').map((s) => s.trim()).filter(Boolean);
   const portfolioList = portfolio.split(',').map((s) => s.trim()).filter(Boolean);
   const experienceList = experience.split(',').map((s) => s.trim()).filter(Boolean);
@@ -321,7 +317,7 @@ const FlatCardPreview: React.FC<DigitalCardProps> = ({
       const items = skillsList;
       return (
         <div style={{ padding: isMobile ? 12 : 16 }}>
-          {items.map((it, idx) => renderItem(it))}
+          {items.map((it, idx) => <div key={idx}>{renderItem(it)}</div>)}
         </div>
       );
     }
@@ -354,8 +350,7 @@ const FlatCardPreview: React.FC<DigitalCardProps> = ({
       {/* Cover Image Section */}
       <div style={{
         width: "100%", height: "120px", overflow: "hidden",
-        backgroundImage: cover ? "none" : `linear-gradient(135deg, ${themeColor1}, ${themeColor2})`,
-        backgroundColor: cover ? "transparent" : "transparent",
+        background: cover ? "transparent" : `linear-gradient(135deg, ${themeColor1}, ${themeColor2})`,
         backgroundSize: cover ? "cover" : "auto",
         backgroundPosition: cover ? "center" : "initial"
       }}>
@@ -381,57 +376,47 @@ const FlatCardPreview: React.FC<DigitalCardProps> = ({
         {location && <p style={{ margin: "0 0 16px", fontSize: "14px", color: "#FFFFFF" }}>{location}</p>}
         <p style={{ fontSize: "13px", lineHeight: 1.5, color: "#FFFFFF", margin: "0 0 20px", opacity: 0.9 }}>{about}</p>
         
-        {(email || phone || linkedin || website) && (
-          <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-            {email && (
-              <a href={`mailto:${email}`} style={{
-                width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
-                border: "1px solid rgba(255, 255, 255, 0.4)"
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-                  <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
-                  <path d="M4 8l8 5 8-5"/>
-                </svg>
-              </a>
-            )}
-            {phone && (
-              <a href={`tel:${phone}`} style={{
-                width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
-                border: "1px solid rgba(255, 255, 255, 0.4)"
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.63A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-                </svg>
-              </a>
-            )}
-            {linkedin && (
-              <a href={linkedin} style={{
-                width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
-                border: "1px solid rgba(255, 255, 255, 0.4)"
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
-                  <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4zM8.5 8.5h3.8v1.98h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V23h-4v-6.3c0-1.5-.03-3.44-2.1-3.44-2.1 0-2.42 1.64-2.42 3.34V23h-4z"/>
-                </svg>
-              </a>
-            )}
-            {website && (
-              <a href={website} style={{
-                width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
-                border: "1px solid rgba(255, 255, 255, 0.4)"
-              }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="2" y1="12" x2="22" y2="12"/>
-                  <path d="M12 2a15.3 15.3 0 010 20a15.3 15.3 0 010-20z"/>
-                </svg>
-              </a>
-            )}
-          </div>
-        )}
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+          <a href={`mailto:${email}`} style={{
+            width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
+            border: "1px solid rgba(255, 255, 255, 0.4)"
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+              <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
+              <path d="M4 8l8 5 8-5"/>
+            </svg>
+          </a>
+          <a href={`tel:${phone}`} style={{
+            width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
+            border: "1px solid rgba(255, 255, 255, 0.4)"
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+          </a>
+          <a href={linkedin} style={{
+            width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
+            border: "1px solid rgba(255, 255, 255, 0.4)"
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
+              <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4zM8.5 8.5h3.8v1.98h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V23h-4v-6.3c0-1.5-.03-3.44-2.1-3.44-2.1 0-2.42 1.64-2.42 3.34V23h-4z"/>
+            </svg>
+          </a>
+          <a href={website} style={{
+            width: "40px", height: "40px", borderRadius: "9999px", background: "rgba(255, 255, 255, 0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
+            border: "1px solid rgba(255, 255, 255, 0.4)"
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 010 20a15.3 15.3 0 010-20z"/>
+            </svg>
+          </a>
+        </div>
 
         {/* Pills Section */}
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginTop: "16px" }}>
@@ -493,12 +478,13 @@ const FlatCardPreview: React.FC<DigitalCardProps> = ({
   );
 };
 
+// Modern Template
 const ModernCardPreview: React.FC<DigitalCardProps> = ({
   name = "", title = "", company = "", location = "", about = "", photo = "", cover = "",
   email = "", phone = "", linkedin = "", website = "", themeColor1, themeColor2, fontFamily,
   skills = "", portfolio = "", experience = "", services = "", review = ""
 }) => {
-  const firstLetter = name ? name.charAt(0).toUpperCase() : "";
+  const firstLetter = name ? name.charAt(0).toUpperCase() : "J";
   
   type Section = 'Services' | 'Portfolio' | 'Skills' | 'Experience' | 'Review';
   const [activePanel, setActivePanel] = useState<Section | null>(null);
@@ -562,17 +548,13 @@ const ModernCardPreview: React.FC<DigitalCardProps> = ({
     <div style={{
       width: "360px", borderRadius: "20px", overflow: "hidden",
       boxShadow: "0 12px 32px rgba(0, 0, 0, 0.15)", fontFamily: fontFamily,
-      backgroundImage: `linear-gradient(135deg, ${themeColor1} 0%, ${themeColor2} 100%)`,
-      backgroundColor: "transparent",
-      backgroundSize: "auto",
-      backgroundPosition: "initial",
+      background: `linear-gradient(135deg, ${themeColor1} 0%, ${themeColor2} 100%)`,
       border: "1px solid rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", position: 'relative'
     }}>
       {/* Cover Image Section */}
       <div style={{
         width: "100%", height: "140px", overflow: "hidden",
-        backgroundImage: cover ? "none" : `linear-gradient(135deg, ${themeColor1}, ${themeColor2})`,
-        backgroundColor: cover ? "transparent" : "transparent",
+        background: cover ? "transparent" : `linear-gradient(135deg, ${themeColor1}, ${themeColor2})`,
         backgroundSize: cover ? "cover" : "auto",
         backgroundPosition: cover ? "center" : "initial",
         borderRadius: "20px 20px 0 0"
@@ -612,61 +594,52 @@ const ModernCardPreview: React.FC<DigitalCardProps> = ({
         
         <p style={{ fontSize: "13px", lineHeight: 1.6, color: "#FFFFFF", margin: "0 0 24px", opacity: 0.9 }}>{about}</p>
         
-        {(email || phone || linkedin || website) && (
-          <div style={{ display: "grid", gridTemplateColumns: `repeat(${[email, phone, linkedin, website].filter(Boolean).length}, 1fr)`, gap: "8px" }}>
-            {email && (
-              <a href={`mailto:${email}`} style={{
-                padding: "12px", borderRadius: "12px", background: `${themeColor1}10`,
-                border: `1px solid ${themeColor1}30`, textDecoration: "none",
-                display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "12px", fontWeight: 600
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
-                  <path d="M4 8l8 5 8-5"/>
-                </svg>
-                Email
-              </a>
-            )}
-            {phone && (
-              <a href={`tel:${phone}`} style={{
-                padding: "12px", borderRadius: "12px", background: `${themeColor1}10`,
-                border: `1px solid ${themeColor1}30`, textDecoration: "none",
-                display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "12px", fontWeight: 600
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" style={{ marginRight: 2 }}>
-                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-                </svg>
-                Call
-              </a>
-            )}
-            {linkedin && (
-              <a href={linkedin} style={{
-                padding: "12px", borderRadius: "12px", background: `${themeColor1}10`,
-                border: `1px solid ${themeColor1}30`, textDecoration: "none",
-                display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "12px", fontWeight: 600
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" style={{ marginRight: 2 }}>
-                  <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4zM8.5 8.5h3.8v1.98h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V23h-4v-6.3c0-1.5-.03-3.44-2.1-3.44-2.1 0-2.42 1.64-2.42 3.34V23h-4z"/>
-                </svg>
-                LinkedIn
-              </a>
-            )}
-            {website && (
-              <a href={website} style={{
-                padding: "12px", borderRadius: "12px", background: `${themeColor1}10`,
-                border: `1px solid ${themeColor1}30`, textDecoration: "none",
-                display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "12px", fontWeight: 600
-              }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="2" y1="12" x2="22" y2="12"/>
-                  <path d="M12 2a15.3 15.3 0 010 20a15.3 15.3 0 010-20z"/>
-                </svg>
-                Website
-              </a>
-            )}
-          </div>
-        )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          <a href={`mailto:${email}`} style={{
+            padding: "12px", borderRadius: "12px", background: `${themeColor1}10`,
+            border: `1px solid ${themeColor1}30`, textDecoration: "none",
+            display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "12px", fontWeight: 600
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
+              <path d="M4 8l8 5 8-5"/>
+            </svg>
+            Email
+          </a>
+          <a href={`tel:${phone}`} style={{
+            padding: "12px", borderRadius: "12px", background: `${themeColor1}10`,
+            border: `1px solid ${themeColor1}30`, textDecoration: "none",
+            display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "12px", fontWeight: 600
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" style={{ marginRight: 2 }}>
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+            Call
+          </a>
+          <a href={linkedin} style={{
+            padding: "12px", borderRadius: "12px", background: `${themeColor1}10`,
+            border: `1px solid ${themeColor1}30`, textDecoration: "none",
+            display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "12px", fontWeight: 600
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" style={{ marginRight: 2 }}>
+              <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4zM8.5 8.5h3.8v1.98h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V23h-4v-6.3c0-1.5-.03-3.44-2.1-3.44-2.1 0-2.42 1.64-2.42 3.34V23h-4z"/>
+            </svg>
+            LinkedIn
+          </a>
+          <a href={website} style={{
+            padding: "12px", borderRadius: "12px", background: `${themeColor1}10`,
+            border: `1px solid ${themeColor1}30`, textDecoration: "none",
+            display: "flex", alignItems: "center", gap: "8px", color: "#FFFFFF", fontSize: "12px", fontWeight: 600
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 010 20a15.3 15.3 0 010-20z"/>
+            </svg>
+            Website
+          </a>
+        </div>
+
         {/* Pills Section */}
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginTop: "16px" }}>
           {[
@@ -797,14 +770,11 @@ const SleekCardPreview: React.FC<DigitalCardProps> = ({
     <div style={{
       width: "360px", borderRadius: "4px", overflow: "hidden",
       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)", fontFamily: fontFamily,
-      backgroundImage: `linear-gradient(135deg, ${themeColor1} 0%, ${themeColor2} 100%)`, 
-      backgroundColor: "transparent",
-      border: `1px solid #e5e5e5`, position: 'relative'
+      background: `linear-gradient(135deg, ${themeColor1} 0%, ${themeColor2} 100%)`, border: `1px solid #e5e5e5`, position: 'relative'
     }}>
       <div style={{
         height: "120px", 
-        backgroundImage: cover ? `url(${cover})` : `linear-gradient(135deg, ${themeColor1}, ${themeColor2})`,
-        backgroundColor: "transparent",
+        background: cover ? `url(${cover})` : `linear-gradient(135deg, ${themeColor1}, ${themeColor2})`,
         backgroundSize: cover ? "cover" : "auto",
         backgroundPosition: cover ? "center" : "initial",
         position: "relative", display: "flex", alignItems: "flex-end", padding: "20px"
@@ -841,67 +811,55 @@ const SleekCardPreview: React.FC<DigitalCardProps> = ({
           <p style={{ fontSize: "12px", lineHeight: 1.5, color: "#FFFFFF", margin: "0", opacity: 0.9 }}>{about}</p>
         </div>
         
-        {(email || phone || linkedin || website) && (
-          <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px" }}>
-            <div style={{ display: "flex", gap: "1px" }}>
-              {email && (
-                <a href={`mailto:${email}`} style={{
-                  flex: 1, padding: "10px", background: themeColor1, textDecoration: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "11px", fontWeight: 600
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" style={{ marginRight: 6 }}>
-                    <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
-                    <path d="M4 8l8 5 8-5"/>
-                  </svg>
-                </a>
-              )}
-              {phone && (
-                <a href={`tel:${phone}`} style={{
-                  flex: 1, padding: "10px", background: themeColor1, textDecoration: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "11px", fontWeight: 600
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" style={{ marginRight: 6 }}>
-                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.63A2 2 0 013.08 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
-                  </svg>
-                </a>
-              )}
-              {linkedin && (
-                <a href={linkedin} style={{
-                  flex: 1, padding: "10px", background: themeColor1, textDecoration: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "11px", fontWeight: 600
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" style={{ marginRight: 6 }}>
-                    <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4zM8.5 8.5h3.8v1.98h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V23h-4v-6.3c0-1.5-.03-3.44-2.1-3.44-2.1 0-2.42 1.64-2.42 3.34V23h-4z"/>
-                  </svg>
-                </a>
-              )}
-              {website && (
-                <a href={website} style={{
-                  flex: 1, padding: "10px", background: themeColor1, textDecoration: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "11px", fontWeight: 600
-                }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" style={{ marginRight: 6 }}>
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="2" y1="12" x2="22" y2="12"/>
-                    <path d="M12 2a15.3 15.3 0 010 20a15.3 15.3 0 010-20z"/>
-                  </svg>
-                </a>
-              )}
-            </div>
+        <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: "16px" }}>
+          <div style={{ display: "flex", gap: "1px" }}>
+            <a href={`mailto:${email}`} style={{
+              flex: 1, padding: "10px", background: themeColor1, textDecoration: "none",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "11px", fontWeight: 600
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" style={{ marginRight: 6 }}>
+                <rect x="4" y="6" width="16" height="12" rx="2" ry="2"/>
+                <path d="M4 8l8 5 8-5"/>
+              </svg>
+            </a>
+            <a href={`tel:${phone}`} style={{
+              flex: 1, padding: "10px", background: themeColor1, textDecoration: "none",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "11px", fontWeight: 600
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" style={{ marginRight: 6 }}>
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 013.08 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+            </a>
+            <a href={linkedin} style={{
+              flex: 1, padding: "10px", background: themeColor1, textDecoration: "none",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "11px", fontWeight: 600
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" style={{ marginRight: 6 }}>
+                <path d="M4.98 3.5C4.98 4.88 3.86 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5zM.5 8.5h4V23h-4zM8.5 8.5h3.8v1.98h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.77 2.65 4.77 6.1V23h-4v-6.3c0-1.5-.03-3.44-2.1-3.44-2.1 0-2.42 1.64-2.42 3.34V23h-4z"/>
+              </svg>
+            </a>
+            <a href={website} style={{
+              flex: 1, padding: "10px", background: themeColor1, textDecoration: "none",
+              display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "11px", fontWeight: 600
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" style={{ marginRight: 6 }}>
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 010 20a15.3 15.3 0 010-20z"/>
+              </svg>
+            </a>
           </div>
-        )}
+        </div>
 
         {/* Pills Section */}
         <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "center", marginTop: "16px", padding: "0 20px" }}>
           {[
-            { text: "Services", value: services },
-            { text: "Portfolio", value: portfolio },
-            { text: "Skills", value: skills },
-            { text: "Experience", value: experience },
-            { text: "Review", value: review },
-          ]
-          .filter(b => b.value && b.value.trim() !== '')
-          .map((b) => (
+            { text: "Services" },
+            { text: "Portfolio" },
+            { text: "Skills" },
+            { text: "Experience" },
+            { text: "Review" },
+          ].map((b) => (
             <button
               key={b.text}
               onClick={() => setActivePanel(b.text as Section)}
@@ -963,6 +921,7 @@ interface ExtraField {
 }
 
 const EditPage = () => {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('Display');
   const [selectedColor1, setSelectedColor1] = useState('');
   const [selectedColor2, setSelectedColor2] = useState(''); 
@@ -1007,11 +966,13 @@ const EditPage = () => {
   const [reviews, setReviews] = useState('');
   // --- END NEW STATE ---
   
+  // Card Type functionality
+  const [customTypes, setCustomTypes] = useState<string[]>([]);
+  const [showCustomTypeInput, setShowCustomTypeInput] = useState(false);
+  const [customTypeInput, setCustomTypeInput] = useState('');
+  
   // Loading state for user data
   const [isLoadingUser, setIsLoadingUser] = useState(true);
-
-  // Store original user profile image URL
-  const [originalUserProfileImage, setOriginalUserProfileImage] = useState<string | null>(null);
 
   // Fetch current user data on component mount
   useEffect(() => {
@@ -1030,9 +991,6 @@ const EditPage = () => {
           setEmail(user.email || '');
           setPhone(user.phone || '');
           setProfileImage(user.profileImage || null);
-          
-          // Store original profile image URL for default use
-          setOriginalUserProfileImage(user.profileImage || null);
           
           // Set some defaults
           setSelectedColor1('#145dfd');
@@ -1262,6 +1220,23 @@ const EditPage = () => {
       field.id === id ? { ...field, link: value } : field
     ));
   };
+
+  // Card Type helper functions
+  const builtInTypes = ['Personal', 'Professional', 'Business', 'Company', 'Creator', 'Influencer'];
+  
+  const handleAddCustomType = () => {
+    if (customTypeInput.trim() && !builtInTypes.includes(customTypeInput.trim()) && !customTypes.includes(customTypeInput.trim())) {
+      setCustomTypes([...customTypes, customTypeInput.trim()]);
+      setCardType(customTypeInput.trim());
+      setCustomTypeInput('');
+      setShowCustomTypeInput(false);
+    }
+  };
+
+  const getAllCardTypes = () => {
+    return [...builtInTypes, ...customTypes];
+  };
+
   // --- END NEW HANDLER FUNCTIONS ---
 
   // Save card function
@@ -1327,17 +1302,10 @@ const EditPage = () => {
       // Add image files if they exist
       if (profileImageFile) {
         formData.append('profileImage', profileImageFile);
-      } else if (originalUserProfileImage) {
-        // If no new profile image is uploaded but user has an existing profile image, use it
-        formData.append('profileImageUrl', originalUserProfileImage);
       }
       
       if (bannerImageFile) {
         formData.append('bannerImage', bannerImageFile);
-      }
-
-      if (resumeFile) {
-        formData.append('document', resumeFile);
       }
 
       // Make API call
@@ -1388,6 +1356,7 @@ const EditPage = () => {
       themeColor1: selectedColor1,
       themeColor2: selectedColor2,
       fontFamily: selectedFont,
+      cardType,
     };
 
     switch (selectedDesign) {
@@ -1594,9 +1563,7 @@ const EditPage = () => {
             </div>
             
             <div style={{ marginBottom: '30px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#333' }}>
-                Cover Image
-              </h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px', color: '#333' }}>Cover Image</h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '15px' }}>
                 <input
                   type="file"
@@ -1958,62 +1925,25 @@ const EditPage = () => {
               </div>
             ))}
 
+            
+
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>About / Description</label>
               <textarea
                 value={about}
                 onChange={(e) => setAbout(e.target.value)}
-                placeholder="Enter a brief description for your card"
+                rows={4}
                 style={{
                   width: '100%',
-                  minHeight: '100px',
                   padding: '10px',
                   fontSize: '14px',
                   border: '1px solid #ddd',
                   borderRadius: '8px',
                   boxSizing: 'border-box',
-                  backgroundColor: 'white',
-                  color: '#555',
                   outline: 'none',
                   resize: 'vertical'
                 }}
               />
-            </div>
-
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>Upload Document</label>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                style={{ display: 'none' }}
-                id="resume-upload"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    setResumeFile(e.target.files[0]);
-                  }
-                }}
-              />
-              <button
-                onClick={() => document.getElementById('resume-upload')?.click()}
-                style={{
-                  backgroundColor: 'transparent',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  padding: '10px 15px',
-                  fontSize: '14px',
-                  color: '#555',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  outline: 'none',
-                  width: '100%',
-                  justifyContent: 'center'
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="17" x2="12" y2="11"></line><line x1="9" y1="14" x2="12" y2="11"></line><line x1="15" y1="14" x2="12" y2="11"></line></svg>
-                {resumeFile ? resumeFile.name : 'Upload Document'}
-              </button>
             </div>
             
             {/* --- FIELDS MOVED TO "Fields" TAB --- */}
@@ -2382,7 +2312,7 @@ const EditPage = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                     </span>
                     <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#333', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={selectedColor1} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={selectedColor1} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.72"></path></svg>
                       {field.name}
                     </span>
                     <span onClick={() => handleDeleteField(field.id)} style={{ cursor: 'pointer', color: '#888' }}>
@@ -2474,8 +2404,105 @@ const EditPage = () => {
                 }}
               />
             </div>
+                <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>Card Type</label>
+              <select
+                value={cardType}
+                onChange={(e) => setCardType(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  fontSize: '14px',
+                  border: '1px solid #ddd',
+                  borderRadius: '8px',
+                  boxSizing: 'border-box',
+                  outline: 'none'
+                }}
+              >
+                <option value="">Select card type...</option>
+                {getAllCardTypes().map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+              
+              {/* Custom Type Input */}
+              {!showCustomTypeInput ? (
+                <button
+                  type="button"
+                  onClick={() => setShowCustomTypeInput(true)}
+                  style={{
+                    marginTop: '8px',
+                    padding: '6px 12px',
+                    fontSize: '12px',
+                    color: selectedColor1 || '#2563eb',
+                    background: 'transparent',
+                    border: `1px solid ${selectedColor1 || '#2563eb'}`,
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    outline: 'none'
+                  }}
+                >
+                  + Add custom type
+                </button>
+              ) : (
+                <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={customTypeInput}
+                    onChange={(e) => setCustomTypeInput(e.target.value)}
+                    placeholder="Enter custom type..."
+                    style={{
+                      flex: 1,
+                      padding: '6px 8px',
+                      fontSize: '12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      outline: 'none'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomType}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      color: 'white',
+                      background: selectedColor1 || '#2563eb',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCustomTypeInput(false);
+                      setCustomTypeInput('');
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      color: '#666',
+                      background: 'transparent',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
 
-            <div style={{ marginBottom: '15px' }}>
+            
+            {/* <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>Card Type</label>
               <select
                 value={cardType}
@@ -2496,7 +2523,7 @@ const EditPage = () => {
                 <option value="Professional">Professional</option>
                 <option value="Business">Business</option>
               </select>
-            </div>
+            </div> */}
           </div>
         );
       default:
@@ -2610,7 +2637,10 @@ const EditPage = () => {
           {renderContent()}
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px', flexWrap: 'wrap' }}>
-            <button style={{
+            <button 
+              type="button"
+              onClick={() => router.push('/dashboard')}
+              style={{
               backgroundColor: 'transparent',
               border: '1px solid #ddd',
               borderRadius: '8px',

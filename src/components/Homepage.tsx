@@ -2,15 +2,148 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 import Header from './Header';
 import '../app/globals.css';
 
+type Profile = {
+   id: string;
+   name: string;
+   city: string;
+   company?: string;
+   designation?: string;
+};
+
 export default function Homepage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Profile[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
+  const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+  const [acceptedConnections, setAcceptedConnections] = useState<Set<string>>(new Set());
+  const router = useRouter();
+
+  useEffect(() => {
+    const loadConnectionStatuses = async () => {
+      try {
+        const acceptedRes = await fetch('/api/users/connections?type=accepted', { credentials: 'include' });
+        if (acceptedRes.ok) {
+          const { requests } = await acceptedRes.json();
+          const ids = new Set<string>((requests || []).map((r: any) => r.user?.id).filter(Boolean));
+          setAcceptedConnections(ids);
+        }
+
+        const sentRes = await fetch('/api/users/connections?type=sent', { credentials: 'include' });
+        if (sentRes.ok) {
+          const { requests } = await sentRes.json();
+          const ids = new Set<string>((requests || []).map((r: any) => r.receiver?.id).filter(Boolean));
+          setSentRequests(ids);
+        }
+      } catch (e) {
+        console.error('Failed to load connection statuses', e);
+      }
+    };
+
+    loadConnectionStatuses();
+  }, []);
+
+  const handleConnectSearch = async () => {
+    const q = searchQuery.trim().toLowerCase();
+
+    if (!q) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+      setHasSearched(true);
+
+      const response = await fetch('/api/profile/getuser', {
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch users');
+        setIsLoggedIn(false);
+        setSearchResults([]);
+        return;
+      }
+
+      const data = await response.json();
+      const mapped: Profile[] = (data.users || []).map((user: any) => ({
+        id: user.id,
+        name:
+          user.fullName ||
+          `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+          'Unknown User',
+        city: user.location || 'Unknown',
+        company: user.company || undefined,
+        designation: user.title || undefined,
+      }));
+
+      setIsLoggedIn(true);
+
+      const filtered = mapped.filter((p) => {
+        const hay = `${p.name} ${p.designation ?? ''} ${p.company ?? ''} ${p.city}`.toLowerCase();
+        return hay.includes(q);
+      });
+
+      setSearchResults(filtered);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setIsLoggedIn(false);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleConnect = async (userId: string, name: string) => {
+    if (isLoggedIn === false) {
+      router.push('/auth/signup');
+      return;
+    }
+
+    try {
+      setConnectingUserId(userId);
+
+      const response = await fetch('/api/users/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ receiverId: userId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          setIsLoggedIn(false);
+          router.push('/auth/signup');
+        }
+        throw new Error(data.error || 'Failed to connect');
+      }
+
+      setIsLoggedIn(true);
+      setSentRequests((prev) => new Set([...prev, userId]));
+      toast.success(`Connection request sent to ${name}!`);
+    } catch (error: any) {
+      console.error('Connection error:', error);
+      toast.error(error.message || 'Failed to send connection request');
+    } finally {
+      setConnectingUserId(null);
+    }
+  };
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ 
+    <div className="overflow-x-hidden" style={{ 
       background: 'linear-gradient(135deg, var(--background-light-blue) 0%, var(--background-purple-light) 50%, var(--background) 100%)',
       maxWidth: '100vw',
       width: '100%'
@@ -231,7 +364,14 @@ export default function Homepage() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Search by name, company, or industry..."
+                  placeholder="Search by name, skills, company, or city..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleConnectSearch();
+                    }
+                  }}
                   className="w-full rounded-full border-2 border-transparent focus:border-blue-500 focus:outline-none transition-all"
                   style={{ 
                     background: '#FFFFFF',
@@ -246,6 +386,7 @@ export default function Homepage() {
                 />
                 <button 
                   className="absolute text-white rounded-full transition-all search-button-mobile"
+                  onClick={handleConnectSearch}
                   style={{ 
                     right: '0.4rem',
                     paddingLeft: '2rem',
@@ -263,7 +404,85 @@ export default function Homepage() {
                   Search
                 </button>
               </div>
-              
+
+              {hasSearched && (
+                <div className="mt-10" style={{ marginTop: '3.5rem' }}>
+                  {searchLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : (
+                    <>
+                      {searchResults.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {searchResults.map((profile) => (
+                            <div
+                              key={profile.id}
+                              className="flex items-center justify-between rounded-sm bg-white p-4 shadow-md"
+                            >
+                              <div
+                                className="flex items-center gap-3"
+                                style={{ paddingLeft: '16px' }}
+                              >
+                                <div
+                                  className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white font-semibold"
+                                  style={{ filter: isLoggedIn === false ? 'blur(2px)' : 'none' }}
+                                >
+                                  {profile.name.charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-gray-900">
+                                    {profile.name}
+                                  </div>
+                                  {profile.designation && (
+                                    <div className="text-sm text-gray-600">
+                                      {profile.designation}
+                                    </div>
+                                  )}
+                                  <div
+                                    className="text-sm text-gray-500"
+                                    style={{ filter: isLoggedIn === false ? 'blur(2px)' : 'none' }}
+                                  >
+                                    📍 {profile.city}
+                                  </div>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isLoggedIn === false) {
+                                    router.push('/auth/signup');
+                                  } else {
+                                    handleConnect(profile.id, profile.name);
+                                  }
+                                }}
+                                disabled={
+                                  connectingUserId === profile.id ||
+                                  sentRequests.has(profile.id) ||
+                                  acceptedConnections.has(profile.id)
+                                }
+                                className="rounded-sm bg-blue-600 px-8 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                style={{ minWidth: '130px', textAlign: 'center', marginRight: '16px' }}
+                              >
+                                {connectingUserId === profile.id
+                                  ? 'Connecting...'
+                                  : acceptedConnections.has(profile.id) || sentRequests.has(profile.id)
+                                  ? 'Connected'
+                                  : 'Connect'}
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-6 text-center text-gray-500">
+                          No matching profiles found.
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
             </div>
           </div>
         </div>
@@ -273,7 +492,9 @@ export default function Homepage() {
       <section id="what-is-digital-card" className="section px-6 lg:px-12" style={{ 
         background: 'transparent',
         paddingTop: '5rem',
-        paddingBottom: '5rem'
+        paddingBottom: '5rem',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         {/* Subtle background decoration */}
         <div style={{
@@ -430,7 +651,9 @@ No more lost visiting cards or scattered links — just one personal link or QR 
       <section id="build-credibility" className="section px-6 lg:px-12" style={{ 
         background: 'transparent',
         paddingTop: '5rem',
-        paddingBottom: '5rem'
+        paddingBottom: '5rem',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         {/* Animated background elements */}
         <div style={{
@@ -617,7 +840,11 @@ No more lost visiting cards or scattered links — just one personal link or QR 
       </section>
 
       {/* Why Every Professional Needs */}
-      <section id="features" className="section py-12 lg:py-20 px-4 sm:px-6 lg:px-12" style={{ background: 'transparent' }}>
+      <section id="features" className="section py-12 lg:py-20 px-4 sm:px-6 lg:px-12" style={{ 
+        background: 'transparent',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
         {/* Subtle glowing orb background elements */}
         <div style={{
           position: 'absolute',
@@ -760,7 +987,111 @@ No more lost visiting cards or scattered links — just one personal link or QR 
 
       {/* Contact Form Section */}
       
+      
+      {/* FAQ (Enhanced) - placed at the end, above the footer */}
+      <section id="faq" className="section py-12 lg:py-20 px-4 sm:px-6 lg:px-12" style={{ background: 'transparent' }}>
+        <div className="container mx-auto max-w-4xl">
+          <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+            <h2 className="heading-2" style={{ color: '#0f172a', fontWeight: 500 }}>Frequently Asked <span className="gradient-text">Questions</span></h2>
+            <p className="body-text" style={{ color: '#64748B', marginTop: 8 }}>Everything you need to know to get started with MyKard.</p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {[
+              {
+                q: 'How does MyKard works',
+                a: (
+                  <div>
+                    <div>Create Your Profile – Add your professional details.</div>
+                    <div>Customize Your Card – Personalize with themes and logos.</div>
+                    <div>Share Anywhere – Use your link or QR code instantly.</div>
+                    <div>Track Insights – Monitor views, leads, and engagement.</div>
+                  </div>
+                )
+              },
+              {
+                q: 'How can I search for a professional?',
+                a: 'In the Dashboard, use the Search feature at the top. You can search by name, category, or email to quickly find any professional profile.'
+              },
+              {
+                q: 'How can I see my connections?',
+                a: 'Go to your Dashboard and click on the Connections tab. You\'ll see all your active and pending connections in one place.'
+              },
+              {
+                q: 'How much does it cost to get started?',
+                a: 'You can get started for free with a basic MyKard. Just click “Create Your Free Card Now” on the homepage to begin designing your digital card.'
+              },
+              {
+                q: 'How does MyKard help grow my professional network?',
+                a: 'MyKard helps you connect instantly through shareable QR or link — whether at events, meetings, or online. You can discover professionals, entrepreneurs, and creators nearby or in your industry, and stay connected effortlessly.'
+              }
+            ].map((item, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                    borderRadius: 16,
+                    border: '1px solid #e7f0ff',
+                    boxShadow: isOpen ? '0 18px 40px rgba(231,240,255,0.6)' : '0 10px 24px rgba(2,6,23,0.06)',
+                    transition: 'all 0.25s ease',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '1rem 1.25rem',
+                      background: '#e7f0ff',
+                      color: '#0f172a',
+                      border: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 12,
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = 'brightness(1.05)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.filter = 'none'; }}
+                  >
+                    <span style={{ fontSize: 16, fontWeight: 400, letterSpacing: '-0.01em' }}>{item.q}</span>
+                    <svg
+                      width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s ease' }}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  <div
+                    style={{
+                      padding: isOpen ? '14px 18px 18px 18px' : '0 18px',
+                      maxHeight: isOpen ? 500 : 0,
+                      opacity: isOpen ? 1 : 0,
+                      transition: 'all 0.3s ease',
+                      color: '#334155',
+                      background: 'linear-gradient(180deg, rgba(231,240,255,0.8) 0%, rgba(231,240,255,0.6) 100%)'
+                    }}
+                  >
+                    {typeof item.a === 'string' ? (
+                      <p style={{ margin: 0, lineHeight: 1.7, fontSize: 14 }}>{item.a}</p>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 14, lineHeight: 1.7 }}>
+                        {item.a}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
     </div>
+  
   );
 }
