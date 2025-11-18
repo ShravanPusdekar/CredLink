@@ -17,6 +17,34 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // If redirected from another page with a target section, scroll to it smoothly
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    let target: string | null = null
+    try {
+      target = sessionStorage.getItem('scrollTarget')
+      if (target) sessionStorage.removeItem('scrollTarget')
+    } catch {}
+    if (target) {
+      // wait for homepage sections to render
+      const attemptScroll = () => {
+        const el = document.getElementById(target as string)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          return true
+        }
+        return false
+      }
+      if (!attemptScroll()) {
+        const id = window.setInterval(() => {
+          if (attemptScroll()) window.clearInterval(id)
+        }, 100)
+        // safety stop after 3s
+        window.setTimeout(() => window.clearInterval(id), 3000)
+      }
+    }
+  }, [])
+
   // Don't auto-redirect - let users navigate manually
   // The header will show "Dashboard" button if authenticated
 
