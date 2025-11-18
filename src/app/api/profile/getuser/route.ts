@@ -6,10 +6,8 @@ export async function GET(req: NextRequest) {
         // Extract user ID from middleware headers (if available)
         const userId = req.headers.get('x-user-id');
 
-        // Build base where clause for active users
-        const where: any = {
-            status: 'active',
-        };
+        // Build base where clause for users
+        const where: any = {};
 
         // When authenticated, exclude the requesting user from the results
         if (userId) {
@@ -18,7 +16,7 @@ export async function GET(req: NextRequest) {
             };
         }
 
-        // Fetch all active users (excluding current user if logged in)
+        // Fetch all users (excluding current user if logged in)
         const users = await prisma.user.findMany({
             where,
             select: {

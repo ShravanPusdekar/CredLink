@@ -9,11 +9,11 @@ import Header from './Header';
 import '../app/globals.css';
 
 type Profile = {
-   id: string;
-   name: string;
-   city: string;
-   company?: string;
-   designation?: string;
+  id: string;
+  name: string;
+  city: string;
+  company?: string;
+  designation?: string;
 };
 
 export default function Homepage() {
@@ -54,6 +54,7 @@ export default function Homepage() {
 
   const handleConnectSearch = async () => {
     const q = searchQuery.trim().toLowerCase();
+    console.log('handleConnectSearch called', { query: q });
 
     if (!q) {
       setSearchResults([]);
@@ -69,6 +70,11 @@ export default function Homepage() {
         credentials: 'include',
       });
 
+      console.log('handleConnectSearch fetch response', {
+        ok: response.ok,
+        status: response.status,
+      });
+
       if (!response.ok) {
         console.error('Failed to fetch users');
         setIsLoggedIn(false);
@@ -77,6 +83,7 @@ export default function Homepage() {
       }
 
       const data = await response.json();
+      console.log('handleConnectSearch data', data);
       const mapped: Profile[] = (data.users || []).map((user: any) => ({
         id: user.id,
         name:
@@ -99,7 +106,12 @@ export default function Homepage() {
         return hay.includes(q);
       });
 
-      setSearchResults(filtered);
+      const finalResults =
+        filtered.length > 0
+          ? filtered
+          : mapped;
+
+      setSearchResults(finalResults);
     } catch (error) {
       console.error('Error searching users:', error);
       setIsLoggedIn(false);
