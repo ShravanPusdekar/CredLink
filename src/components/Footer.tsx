@@ -25,6 +25,20 @@ export default function Footer() {
     setCurrentYear(new Date().getFullYear());
   }, []);
 
+  // Handle navigation to a section on the homepage without changing URL (no #hash)
+  const handleNavigateToSection = (sectionId: string) => {
+    if (typeof window === 'undefined') return;
+    const onHome = window.location.pathname === '/';
+    if (onHome) {
+      scrollToSection(sectionId);
+    } else {
+      try {
+        sessionStorage.setItem('scrollTarget', sectionId);
+      } catch {}
+      window.location.href = '/';
+    }
+  };
+
   return (
     <footer style={{
       marginTop: 'auto',
@@ -180,8 +194,13 @@ export default function Footer() {
               alignItems: 'center',
               gap: '1rem'
             }}>
-              {[{"name": "Help Center", "path": "/help"}, {"name": "FAQ", "path": "/#faq"}, {"name": "Terms of Service", "path": "/terms"}, {"name": "Privacy Policy", "path": "/privacy"}]
-                .map((link, idx) => (
+              {[
+                { name: 'Help Center', path: '/help' },
+                { name: 'FAQ', sectionId: 'faq' as const },
+                { name: 'Terms of Service', path: '/terms' },
+                { name: 'Privacy Policy', path: '/privacy' }
+              ].map((link, idx) => (
+                link.path ? (
                   <Link
                     key={idx}
                     href={link.path}
@@ -205,7 +224,37 @@ export default function Footer() {
                   >
                     {link.name}
                   </Link>
-                ))}
+                ) : (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleNavigateToSection((link as any).sectionId)}
+                    style={{
+                      color: '#6B7280',
+                      fontSize: '0.95rem',
+                      fontWeight: '500',
+                      textDecoration: 'none',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      background: 'transparent',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#0066FF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#6B7280';
+                    }}
+                  >
+                    {link.name}
+                  </button>
+                )
+              ))}
             </div>
           </div>
           {/* Contact Column */}

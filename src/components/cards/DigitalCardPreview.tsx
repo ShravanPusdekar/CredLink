@@ -67,6 +67,13 @@ const DigitalCardPreview: React.FC<DigitalCardProps> = ({
 
   type Section = 'Services' | 'Portfolio' | 'Skills' | 'Experience' | 'Review';
   const [activePanel, setActivePanel] = useState<Section | null>(null);
+  const openPortfolio = () => {
+    const val = (portfolio || '').trim();
+    if (!val) { setActivePanel('Portfolio'); return; }
+    const hasProto = /^https?:\/\//i.test(val);
+    const url = hasProto ? val : `https://${val}`;
+    if (typeof window !== 'undefined') window.open(url, '_blank', 'noopener');
+  };
 
   return (
     <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
@@ -217,7 +224,10 @@ const DigitalCardPreview: React.FC<DigitalCardProps> = ({
           ].map((b) => (
             <button
               key={b.text}
-              onClick={() => setActivePanel(b.text as Section)}
+              onClick={() => {
+                if (b.text === 'Portfolio') { openPortfolio(); }
+                else { setActivePanel(b.text as Section); }
+              }}
               style={{
                 padding: "8px 14px",
                 background: "rgba(255, 255, 255, 0.2)",
