@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { Search, Filter } from "lucide-react";
 import { toast } from "react-hot-toast";
 import styles from "./search.module.css";
 import { Modal } from "@/components/ui/modal";
-import { useSearchParams } from "next/navigation";
+// Removed useSearchParams to avoid prerender error in Next.js 16
 
 type Profile = {
   id: string;
@@ -21,8 +21,7 @@ type Profile = {
   views?: number;
 };
 
-export default function SearchPage() {
-  const searchParams = useSearchParams();
+function SearchPageContent() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   
   // Dummy data for testing when API returns empty results
@@ -43,9 +42,14 @@ export default function SearchPage() {
 
   // Initialize search query from URL (?q=...)
   useEffect(() => {
-    const q = searchParams.get("q") || "";
-    setQuery(q);
-  }, [searchParams]);
+    if (typeof window === "undefined") return;
+    try {
+      const q = new URL(window.location.href).searchParams.get("q") || "";
+      setQuery(q);
+    } catch {
+      setQuery("");
+    }
+  }, []);
 
   // Fetch users from backend
   useEffect(() => {
@@ -312,5 +316,13 @@ export default function SearchPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <SearchPageContent />
+    </Suspense>
   );
 }
