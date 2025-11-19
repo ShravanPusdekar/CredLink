@@ -382,6 +382,7 @@ const OnboardingPage: React.FC = () => {
         const cardFormData = new FormData();
         
         // Required fields from signup
+        cardFormData.append('cardName', formData.name || 'My Card');
         cardFormData.append('fullName', formData.name || '');
         cardFormData.append('phone', formData.phone || '');
         cardFormData.append('email', formData.email || '');
