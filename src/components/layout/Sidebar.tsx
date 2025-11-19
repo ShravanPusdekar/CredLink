@@ -126,15 +126,15 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      {isMounted && isMobile && (
+      {/* Mobile Menu Button (only when sidebar is closed) */}
+      {isMounted && isMobile && !isOpen && (
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
-          className={`mobileToggle ${isOpen ? 'mobileToggleOpen' : 'mobileToggleClosed'}`}
+          className={"mobileToggle mobileToggleClosed"}
           whileTap={{ scale: 0.9 }}
           suppressHydrationWarning
         >
-          {isOpen ? <X size={22} /> : <Menu size={22} />}
+          <Menu size={22} />
         </motion.button>
       )}
 
@@ -182,6 +182,9 @@ const Sidebar = () => {
                 href={item.path}
                 key={item.name}
                 className={`navItem ${isActive ? "activeNav" : ""}`}
+                onClick={() => {
+                  if (isMobile) setIsOpen(false);
+                }}
               >
                 <span className="navIcon">{item.icon}</span>
                 <span>{item.name}</span>
@@ -205,6 +208,9 @@ const Sidebar = () => {
                 href={item.path}
                 key={item.name}
                 className={`footerLink ${isActive ? "activeNav" : ""}`}
+                onClick={() => {
+                  if (isMobile) setIsOpen(false);
+                }}
               >
                 <span className="navIcon">{item.icon}</span>
                 <span>{item.name}</span>
