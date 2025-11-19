@@ -38,17 +38,13 @@ export function middleware(request: NextRequest) {
     '/pricing',
     '/contact',
     '/support',
-    '/dashboard/edit',
     '/search',
     '/faq',
     '/terms',
     '/privacy',
-    '/create-card',
     '/cards/*',
-    '/dashboard/messages',
     '/api/message/receive',
-    '/api/message/send',
-    '/onboarding'
+    '/api/message/send'
   ]
   
   const isAuthPath = path.startsWith('/auth')
