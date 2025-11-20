@@ -564,14 +564,18 @@ export default function MessagesPage() {
 
                   {/* Content */}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                       <h3 style={{ 
                         fontSize: "14px", 
                         margin: 0, 
                         fontWeight: m.read ? 600 : 700, 
-                        color: m.read ? colors.textMain : "#000" 
+                        color: m.read ? colors.textMain : "#000",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: isMobile ? "60%" : "70%",
                       }}>{m.name}</h3>
-                      <span style={{ fontSize: "11px", color: colors.textLight, fontWeight: 500 }}>{formatDate(m.date)}</span>
+                      <span style={{ fontSize: "11px", color: colors.textLight, fontWeight: 500, whiteSpace: "nowrap", flexShrink: 0 }}>{formatDate(m.date)}</span>
                     </div>
                     
                     <p className="message-text-left" style={{ 
