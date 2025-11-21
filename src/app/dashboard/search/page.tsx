@@ -284,10 +284,6 @@ function SearchPageContent() {
               <div style={{ fontSize: 12, color: "#94A3B8" }}>Results</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A" }}>{filtered.length ?? 0}</div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-              <div style={{ fontSize: 12, color: "#94A3B8" }}>Status</div>
-              <div style={{ fontSize: 14, color: "#10B981", fontWeight: 700 }}>{loading ? "Loading..." : "Live"}</div>
-            </div>
           </div>
         </div>
 

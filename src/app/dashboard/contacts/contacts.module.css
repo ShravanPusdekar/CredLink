@@ -568,6 +568,8 @@
   .contactActions {
     flex-direction: column;
     gap: 0.625rem;
+    align-items: stretch;
+    justify-content: center;
   }
 
   .actionButton {
@@ -580,17 +582,30 @@
     width: 3rem;
     height: 3rem;
     font-size: 1.2rem;
+    margin: 0 auto;
   }
 
   /* Mobile - header flexible layout */
   .contactHeader {
     flex-direction: column;
     gap: 0.75rem;
-    align-items: flex-start;
+    align-items: center;
+    text-align: center;
+  }
+
+  .contactInfo {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .contactDetails {
+    text-align: center;
   }
 
   .contactMeta {
-    align-self: flex-start;
+    align-self: center;
+    margin-top: 0.25rem;
   }
 
   .contactCard {
@@ -604,6 +619,7 @@
 
   .contactName {
     font-size: 1rem;
+    text-align: center;
   }
 
   .contactCardText {
