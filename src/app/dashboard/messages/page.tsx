@@ -53,7 +53,7 @@ export default function MessagesPage() {
   }, []);
 
   const fetchMessages = async () => {
-    try {
+    try{
       const token = localStorage.getItem('token');
       const response = await fetch('/api/message/receive', { 
         method: 'GET',
@@ -423,8 +423,8 @@ export default function MessagesPage() {
       minWidth: 20,
       height: 20,
       borderRadius: "9999px",
-      backgroundColor: "#22c55e",
-      color: "#0f172a",
+      backgroundColor: colors.primary,
+      color: "#FFFFFF",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
