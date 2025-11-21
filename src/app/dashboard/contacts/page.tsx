@@ -102,7 +102,7 @@ export default function ContactsPage() {
         <div className={styles.headerContent}>
           <div className={styles.titleSection}>
             <h1 className={styles.title}>
-              <Users className={styles.titleIcon} />
+              {/* <Users className={styles.titleIcon} /> */}
               My Contacts
             </h1>
             <p className={styles.subtitle}>
