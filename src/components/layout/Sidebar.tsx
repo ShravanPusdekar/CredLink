@@ -50,8 +50,10 @@ const Sidebar = () => {
     setIsOpen(false);
   }, [pathname]);
 
-  // Fetch unread messages count for badge
+  // Fetch unread messages count for badge (kept in sync via events + light polling)
   useEffect(() => {
+    let intervalId: any;
+
     const fetchUnread = async () => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -137,6 +139,27 @@ const Sidebar = () => {
     };
 
     fetchUnread();
+
+    const handleMessagesUpdated = () => {
+      fetchUnread();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('messages-updated', handleMessagesUpdated as any);
+      window.addEventListener('message-sent', handleMessagesUpdated as any);
+      window.addEventListener('message-read', handleMessagesUpdated as any);
+    }
+
+    intervalId = setInterval(fetchUnread, 15000);
+
+    return () => {
+      clearInterval(intervalId);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('messages-updated', handleMessagesUpdated as any);
+        window.removeEventListener('message-sent', handleMessagesUpdated as any);
+        window.removeEventListener('message-read', handleMessagesUpdated as any);
+      }
+    };
   }, []);
 
   // Fetch notifications count for Notifications badge
@@ -214,6 +237,22 @@ const Sidebar = () => {
   // Fetch pending connection requests count for badge
   useEffect(() => {
     let intervalId: any;
+
+    const computePending = (requests: any[]) => {
+      let cleared: string[] = [];
+      try {
+        if (typeof window !== 'undefined') {
+          const stored = window.localStorage.getItem('dashboard-cleared-notifications');
+          if (stored) cleared = JSON.parse(stored);
+        }
+      } catch {
+        cleared = [];
+      }
+
+      const clearedSet = new Set(cleared || []);
+      return requests.filter((r: any) => !clearedSet.has(`conn-${r.id}`)).length;
+    };
+
     const fetchPending = async () => {
       try {
         const res = await fetch('/api/users/connections?type=received', {
@@ -221,8 +260,8 @@ const Sidebar = () => {
         });
         if (!res.ok) return;
         const data = await res.json();
-        const count = (data.requests || []).length;
-        setPendingConnections(count);
+        const requests = Array.isArray(data.requests) ? data.requests : [];
+        setPendingConnections(computePending(requests));
       } catch (_) {
         // ignore
       }
@@ -247,12 +286,40 @@ const Sidebar = () => {
   // Fetch contacts count for Contacts badge (matches Contacts page data source)
   useEffect(() => {
     let intervalId: any;
+
+    const computeUnseenContacts = (contacts: any[]) => {
+      let lastOpened = 0;
+      try {
+        if (typeof window !== 'undefined') {
+          const stored = window.localStorage.getItem('dashboard-contacts-last-opened');
+          if (stored) {
+            lastOpened = new Date(stored).getTime();
+          }
+        }
+      } catch {
+        lastOpened = 0;
+      }
+
+      if (!lastOpened) {
+        return contacts.length;
+      }
+
+      return contacts.filter((c: any) => {
+        const createdAt = c.createdAt || c.created_at || c.date;
+        if (!createdAt) return true;
+        const createdTime = new Date(createdAt).getTime();
+        if (Number.isNaN(createdTime)) return true;
+        return createdTime > lastOpened;
+      }).length;
+    };
+
     const fetchContacts = async () => {
       try {
         const res = await fetch('/api/contacts', { credentials: 'include' });
         if (!res.ok) return;
         const data = await res.json();
-        setContactsCount((data.contacts || []).length);
+        const list = Array.isArray(data.contacts) ? data.contacts : [];
+        setContactsCount(computeUnseenContacts(list));
       } catch (_) {
         // ignore
       }
@@ -284,7 +351,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard /> },
-    { name: "Notifications", path: "/dashboard/notifications", icon: <Bell /> },
+    // { name: "Notifications", path: "/dashboard/notifications", icon: <Bell /> },
     { name: "Messages", path: "/dashboard/messages", icon: <MessageSquare /> },
     { name: "Connections", path: "/dashboard/connections", icon: <Users2 /> },
     { name: "Contacts", path: "/dashboard/contacts", icon: <Users /> },
