@@ -44,3 +44,16 @@ jobs:
       - name: Deploy to ECS
         run: |
           aws ecs update-service --cluster mykard-cluster --service mykard-service --force-new-deployment
+
+      - name: Deploy to EC2
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > deploy_key
+          chmod 600 deploy_key
+          ssh -o StrictHostKeyChecking=no -i deploy_key ubuntu@${{ secrets.EC2_IP }} << 'EOF'
+            cd ~/CredLink
+            git pull origin main
+            npm ci
+            npm run build
+            pm2 restart all
+          EOF
+          rm deploy_key
