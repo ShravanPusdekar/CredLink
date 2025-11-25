@@ -52,7 +52,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i deploy_key ubuntu@${{ secrets.EC2_IP }} << 'EOF'
             cd ~/CredLink
             git pull origin main
-            npm ci
+            npx prisma generate
             npm run build
             pm2 restart all
           EOF
