@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cached.payload);
     }
 
-    let requests;
+    let requests: any[] = [];
 
     if (type === "received") {
       // Pending requests received by this user
