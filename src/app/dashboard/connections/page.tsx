@@ -114,10 +114,12 @@ export default function DashboardContactPage() {
     }
 
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch('/api/message/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -136,6 +138,12 @@ export default function DashboardContactPage() {
 
       toast.success('Message sent');
       handleCloseMessageModal();
+      
+      // Trigger message refresh across the app
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('message-sent'));
+        window.dispatchEvent(new Event('messages-updated'));
+      }
     } catch (e: any) {
       console.error('Send message error:', e);
       toast.error(e?.message || 'Failed to send message');
@@ -385,6 +393,19 @@ export default function DashboardContactPage() {
         setContactsList(prev => [...prev, {...request, connectionStatus: 'connected'}]);
         setConnectionRequests(prev => prev.filter(c => c.id !== contactId));
         toast.success(`Connection with ${request.name} approved!`);
+        try {
+          if (typeof window !== 'undefined') {
+            let existing: string[] = [];
+            const stored = window.localStorage.getItem('dashboard-cleared-notifications');
+            if (stored) existing = JSON.parse(stored);
+            const setExisting = new Set(existing || []);
+            setExisting.add(`conn-${contactId}`);
+            window.localStorage.setItem('dashboard-cleared-notifications', JSON.stringify(Array.from(setExisting)));
+            window.dispatchEvent(new Event('notifications-updated'));
+          }
+        } catch {
+          // ignore
+        }
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('connections-updated'));
         }
@@ -424,6 +445,19 @@ export default function DashboardContactPage() {
       
       if (request) {
         toast.success(`Connection request from ${request.name} rejected`);
+        try {
+          if (typeof window !== 'undefined') {
+            let existing: string[] = [];
+            const stored = window.localStorage.getItem('dashboard-cleared-notifications');
+            if (stored) existing = JSON.parse(stored);
+            const setExisting = new Set(existing || []);
+            setExisting.add(`conn-${contactId}`);
+            window.localStorage.setItem('dashboard-cleared-notifications', JSON.stringify(Array.from(setExisting)));
+            window.dispatchEvent(new Event('notifications-updated'));
+          }
+        } catch {
+          // ignore
+        }
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new Event('connections-updated'));
         }

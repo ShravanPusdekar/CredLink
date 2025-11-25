@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { set } from "zod";
 
 /* -------------------------------------------------
    COLORS & STYLES
@@ -282,6 +283,7 @@ const OnboardingPage: React.FC = () => {
   const router = useRouter();
   const [showPartyPopup, setShowPartyPopup] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const[isEnabled,setIsEnabled]=useState(true);
   const [formData, setFormData] = useState({
     photo: "",
     photoFile: null as File | null,
@@ -379,6 +381,7 @@ const OnboardingPage: React.FC = () => {
       // Final step - Create card
       try {
         // Create FormData for card creation
+        
         const cardFormData = new FormData();
         
         // Required fields from signup
@@ -386,14 +389,19 @@ const OnboardingPage: React.FC = () => {
         cardFormData.append('fullName', formData.name || '');
         cardFormData.append('phone', formData.phone || '');
         cardFormData.append('email', formData.email || '');
-        
+        cardFormData.append('firstName', formData.name || '');
         // Optional fields
         if (formData.title) cardFormData.append('title', formData.title);
         if (formData.company) cardFormData.append('company', formData.company);
         if (formData.location) cardFormData.append('location', formData.location);
         if (formData.about) cardFormData.append('bio', formData.about);
-        
-        // Combine skills, portfolio, and experience into description
+
+        // Add standalone skills and portfolio so they are stored in dedicated DB columns
+        if (formData.skills) cardFormData.append('skills', formData.skills);
+        if (formData.portfolio) cardFormData.append('portfolio', formData.portfolio);
+        if (formData.experience) cardFormData.append('experience', formData.experience);
+
+        // Also keep a consolidated description for backward compatibility / previews
         const descriptionParts = [];
         if (formData.skills) descriptionParts.push(`Skills: ${formData.skills}`);
         if (formData.portfolio) descriptionParts.push(`Portfolio: ${formData.portfolio}`);
@@ -424,6 +432,11 @@ const OnboardingPage: React.FC = () => {
         }
         
         // Create card using card creation API
+        if(!isEnabled){
+          return;
+        }
+        setIsEnabled(false);
+        
         const response = await fetch('/api/card/create', {
           method: 'POST',
           credentials: 'include',
@@ -434,12 +447,14 @@ const OnboardingPage: React.FC = () => {
         console.log('Card creation response:', data);
         
         if (!response.ok) {
+          setIsEnabled(true); // Re-enable button on error
           throw new Error(data.error || 'Failed to create card');
         }
         
         setShowPartyPopup(true);
       } catch(error: any) {
         console.error('Error creating card:', error);
+        setIsEnabled(true); // Re-enable button on error
         alert(error.message || 'Failed to create card. Please try again.');
       }
     }
@@ -489,6 +504,31 @@ const OnboardingPage: React.FC = () => {
     objectFit: 'cover' as const,
     position: 'relative',
     zIndex: 10,
+  };
+
+  const heroTitleStyle: React.CSSProperties = {
+    fontSize: isLargeScreen ? "32px" : "clamp(20px, 6vw, 32px)",
+    fontWeight: "700",
+    color: "#1F2937",
+    display: "flex",
+    flexDirection: "row",
+    alignItems: isLargeScreen ? "flex-end" : "center",
+    justifyContent: "center",
+    gap: isLargeScreen ? "5px" : "6px",
+    whiteSpace: "nowrap",
+    lineHeight: "1",
+    marginBottom: "20px",
+    textAlign: "center",
+    maxWidth: "100%",
+    overflow: "hidden",
+  };
+
+  const heroLogoStyle: React.CSSProperties = {
+    height: isLargeScreen ? undefined : "clamp(52px, 14vw, 96px)",
+    maxHeight: isLargeScreen ? "100px" : undefined,
+    objectFit: "contain",
+    marginBottom: "0",
+    maxWidth: isLargeScreen ? "180px" : "50vw",
   };
 
   const inputStyle = (id: string) => ({
@@ -570,39 +610,22 @@ const OnboardingPage: React.FC = () => {
           }}
         >
           <div style={{ maxWidth: '448px', textAlign: 'center', marginBottom: 0 }}>
-  <h1
-  style={{
-    fontSize: "40px",
-    fontWeight: "700",
-    color: "#1F2937",
-    display: "flex",
-    alignItems: "flex-end",   
-    justifyContent: "center",
-    gap: "5px",
-    whiteSpace: "nowrap",
-    lineHeight: "1",
-    marginBottom: "20px",      
-  }}
->
-  Welcome to
-  <img
-    src="/assets/myKard.png"
-    alt="MyKard Logo"
-    style={{
-      height: "150px",        
-      objectFit: "contain",
-      marginBottom: "-50px", 
-    }}
-  />
-</h1>
-           <p
-    style={{
-      color: colors.textLight,
-      margin: "0 0 32px",            
-    }}
-  >
-    Build connections in your own unique way.
-  </p>
+            <h1 style={heroTitleStyle}>
+              <span>Welcome to</span>
+              <img
+                src="/assets/headerlogo.png"
+                alt="MyKard Logo"
+                style={heroLogoStyle}
+              />
+            </h1>
+            <p
+              style={{
+                color: colors.textLight,
+                margin: "0 0 32px",
+              }}
+            >
+              Build connections in your own unique way.
+            </p>
             <button
               onClick={() => setStep(1)}
               style={{
@@ -945,7 +968,8 @@ const OnboardingPage: React.FC = () => {
                 disabled={
                   (step === 1 && !formData.name.trim()) ||
                   (step === 2 && !formData.phone.trim()) ||
-                  (step === 3 && !formData.email.trim())
+                  (step === 3 && !formData.email.trim()) ||
+                  (step === 10 && !isEnabled)
                 }
                 style={{
                   flex: step >= 4 && step <= 9 ? 1 : 'auto',
@@ -954,7 +978,8 @@ const OnboardingPage: React.FC = () => {
                   background: (
                     (step === 1 && !formData.name.trim()) ||
                     (step === 2 && !formData.phone.trim()) ||
-                    (step === 3 && !formData.email.trim())
+                    (step === 3 && !formData.email.trim()) ||
+                    (step === 10 && !isEnabled)
                   )
                     ? '#D1D5DB'
                     : `linear-gradient(135deg, ${colors.primary}, ${colors.purple})`,
@@ -966,20 +991,22 @@ const OnboardingPage: React.FC = () => {
                   cursor: (
                     (step === 1 && !formData.name.trim()) ||
                     (step === 2 && !formData.phone.trim()) ||
-                    (step === 3 && !formData.email.trim())
+                    (step === 3 && !formData.email.trim()) ||
+                    (step === 10 && !isEnabled)
                   )
                     ? 'not-allowed'
                     : 'pointer',
                   opacity: (
                     (step === 1 && !formData.name.trim()) ||
                     (step === 2 && !formData.phone.trim()) ||
-                    (step === 3 && !formData.email.trim())
+                    (step === 3 && !formData.email.trim()) ||
+                    (step === 10 && !isEnabled)
                   )
                     ? 0.6
                     : 1,
                 }}
               >
-                {step < 10 ? 'Continue' : 'Create Card'}
+                {step === 10 && !isEnabled ? 'Creating...' : (step < 10 ? 'Continue' : 'Create Card')}
               </button>
             </div>
 

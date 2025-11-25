@@ -48,6 +48,13 @@ export default function LoginPage() {
       
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
+        
+        // Handle deactivated account (403 status)
+        if (res.status === 403) {
+          setError(data?.error || 'Your account has been deactivated. Please contact support.')
+          return
+        }
+        
         setError(data?.error || 'Login failed. Please try again.')
         return
       }
@@ -87,6 +94,10 @@ export default function LoginPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
+        // Handle deactivated account
+        if (res.status === 403 || data?.error?.includes('deactivated')) {
+          throw new Error('Your account has been deactivated. Please contact support to reactivate your account.')
+        }
         throw new Error(data?.error || 'Authentication failed')
       }
       if (data?.needsOnboarding) {
@@ -106,9 +117,13 @@ export default function LoginPage() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <Link href="/" className="block">
-            <h1 className="auth-logo">MyKard</h1>
-          </Link>
+          <Link href="/" className="flex justify-center w-full">
+  <img
+    src="/assets/headerlogo.png"
+    alt="MyKard Logo"
+    className="h-12 w-auto"
+  />
+</Link>
           <h2 className="auth-title">
             Sign in to your account
           </h2>

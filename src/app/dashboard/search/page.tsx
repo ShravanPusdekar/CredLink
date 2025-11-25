@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, Suspense, useRef } from "react";
-import { Search, ChevronDown } from "lucide-react";
+import React, { useMemo, useState, useEffect, Suspense } from "react";
+import { Search } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Modal } from "@/components/ui/modal";
 
@@ -36,30 +36,11 @@ function SearchPageContent() {
 
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [connectionName, setConnectionName] = useState("");
   const [connectingUserId, setConnectingUserId] = useState<string | null>(null);
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
   const [acceptedConnections, setAcceptedConnections] = useState<Set<string>>(new Set());
-
-  // custom dropdown state (responsive)
-  const [catOpen, setCatOpen] = useState(false);
-  const catRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    // close on outside click / ESC
-    const handleClick = (e: MouseEvent) => {
-      if (catRef.current && !catRef.current.contains(e.target as Node)) setCatOpen(false);
-    };
-    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setCatOpen(false); };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -145,19 +126,10 @@ function SearchPageContent() {
     } finally { setConnectingUserId(null); }
   };
 
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    profiles.forEach((p) => p.category && set.add(p.category));
-    return Array.from(set);
-  }, [profiles]);
-
   const hasQuery = query.trim().length > 0;
   const filtered = useMemo(() => {
     const raw = query.trim().toLowerCase();
-    if (!raw) {
-      if (category) return profiles.filter(p => p.category === category).slice(0, 50);
-      return [];
-    }
+    if (!raw) return [];
     let keywordsPart = raw;
     let locationPart = "";
     const inIdx = raw.lastIndexOf(" in ");
@@ -178,12 +150,9 @@ function SearchPageContent() {
       const city = (p.city || "").toLowerCase();
       const keywordsMatch = keywords.length === 0 || keywords.every(k => hay.includes(k));
       const locationMatch = !locationPart || city.includes(locationPart);
-      if (category && p.category !== category) return false;
       return keywordsMatch && locationMatch;
     }).slice(0, 50);
-  }, [query, category, profiles]);
-
-  const chooseCategory = (c: string) => { setCategory(c); setCatOpen(false); };
+  }, [query, profiles]);
 
   return (
     // Allow dropdown to extend outside; top-level container uses visible overflow
@@ -200,33 +169,24 @@ function SearchPageContent() {
       <style>{`
         /* Core responsive & futuristic styles inline so you can paste this file directly */
         .wrap { position: relative; z-index: 10; max-width: 1100px; margin: 18px auto; padding: 28px; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; }
-        .header { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
-        .title { font-size:28px; font-weight:800; background: linear-gradient(90deg,#071A52,#0B3A5C); -webkit-background-clip:text; background-clip:text; color:transparent; }
-        .subtitle { margin-top:8px; color:#475569; font-size:14px; }
+        .header { display:flex; flex-direction: column; align-items:center; gap:8px; text-align:center; margin-bottom: 12px; }
+        .title { font-size:28px; font-weight:700; color:#111827; line-height:1.05; margin:0; text-align:center; }
+        .subtitle { color:#4B5563; font-size:16px; line-height:1.5; max-width: 600px; margin: 0 auto; }
         .search-panel { margin-top:18px; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border-radius:14px; padding:14px; border:1px solid rgba(0,0,0,0.04); box-shadow: 0 10px 30px rgba(2,6,23,0.08); overflow: visible; }
 
         .row { display:flex; gap:12px; align-items:center; width:100%; }
         .left { flex:1; position:relative; }
-        .left input { width:100%; padding:12px 16px 12px 44px; border-radius:12px; border:1px solid rgba(0,0,0,0.06); background: #fff; color:#0F172A; font-size:14px; outline:none; box-shadow: 0 6px 18px rgba(16,24,40,0.03); }
+        .left input { width:100%; padding:12px 16px 12px 44px; border-radius:12px; border:1px solid #E2E8F0; background: #fff; color:#0F172A; font-size:14px; outline:none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .left input::placeholder { color: rgba(15,23,42,0.4); }
 
         .icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); opacity:0.85; }
-
-        /* custom dropdown */
-        .cat { position:relative; z-index: 9999; min-width:140px; width: 180px; max-width: 100%; }
-        .cat-btn { width:100%; display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,0.04); background:#fff; font-size:14px; color:#0F172A; cursor:pointer; box-shadow: 0 6px 18px rgba(16,24,40,0.03); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cat-panel { position: absolute; top: 100%; left: 0; right: 0; width: 100%; background: #fff; border-radius: 10px; box-shadow: 0 14px 40px rgba(2,6,23,0.12); border: 1px solid rgba(0,0,0,0.06); overflow: auto; max-height: 60vh; z-index: 99999; }
-        .cat-item { padding:12px 14px; cursor:pointer; font-size:15px; border-bottom:1px solid rgba(0,0,0,0.03); color:#0F172A; }
-        .cat-item:last-child { border-bottom:none; }
-        .cat-item:hover { background: linear-gradient(90deg, rgba(99,102,241,0.06), rgba(34,211,238,0.03)); }
-
 
         .meta { margin-top:12px; color:#64748B; font-size:13px; }
 
         /* cards grid */
         .grid { margin-top:16px; display:grid; grid-template-columns: repeat(3, 1fr); gap:16px; }
         .card { border-radius:12px; padding:12px; background:#fff; border:1px solid rgba(0,0,0,0.04); box-shadow:0 8px 28px rgba(2,6,23,0.06); display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:92px; }
-        .avatar { width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:22px; color:#071A52; background: var(--gradient-primary); box-shadow: 0 6px 18px rgba(99,102,241,0.08); }
+        .avatar { width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:22px; color:#fff; background: var(--gradient-primary); box-shadow: 0 6px 18px rgba(99,102,241,0.08); }
         .name { font-weight:700; font-size:16px; color:#0F172A; margin:0; }
         .designation { font-size:13px; color:#475569; margin:0; }
         .city { font-size:12px; color:#94A3B8; margin-top:6px; }
@@ -235,28 +195,10 @@ function SearchPageContent() {
 
         /* responsive: small screens (mobile phones) */
         @media (max-width: 720px) {
-          .wrap { padding: 18px; }
-          .title { font-size:22px; }
+          .wrap { padding: 6px 8px; }
+          .title { font-size:24px; }
           .row { flex-direction: column; align-items: stretch; gap:12px; }
-          .cat { width: 100%; }
-          .cat-btn { width: 100%; }
           .left input { padding: 12px 16px 12px 44px; font-size:15px; }
-          .cat {
-            width: 100%;
-            margin-top: 8px;
-          }
-          .cat-panel {
-            position: fixed;
-            top: auto;
-            bottom: 18px;
-            left: 16px;
-            right: 16px;
-            width: auto;
-            max-width: none;
-            border-radius: 12px;
-            z-index: 99999;
-            max-height: 50vh;
-          }
           .grid { grid-template-columns: 1fr; }
           .card { align-items:flex-start; gap:10px; }
           .avatar { width:56px; height:56px; font-size:20px; }
@@ -265,7 +207,6 @@ function SearchPageContent() {
         /* medium screens */
         @media (max-width: 980px) and (min-width: 721px) {
           .grid { grid-template-columns: repeat(2, 1fr); }
-          .cat { width: 220px; }
         }
 
         /* utility spinner keyframes */
@@ -276,19 +217,15 @@ function SearchPageContent() {
         <div className="header">
           <div>
             <div className="title">Search Professionals</div>
-            <div className="subtitle">Find and connect with experts across industries — fast, secure, and beautiful.</div>
+            <div className="subtitle">Discover and connect with top professionals — quick, safe, and effortless.</div>
           </div>
 
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {/* <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <div style={{ padding: "10px 12px", borderRadius: 12, background: "linear-gradient(90deg, rgba(2,6,23,0.06), rgba(9,14,34,0.06))", border: "1px solid rgba(0,0,0,0.02)" }}>
               <div style={{ fontSize: 12, color: "#94A3B8" }}>Results</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A" }}>{filtered.length ?? 0}</div>
             </div>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-              <div style={{ fontSize: 12, color: "#94A3B8" }}>Status</div>
-              <div style={{ fontSize: 14, color: "#10B981", fontWeight: 700 }}>{loading ? "Loading..." : "Live"}</div>
-            </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="search-panel">
@@ -303,34 +240,10 @@ function SearchPageContent() {
               />
             </div>
 
-            <div className="cat" ref={catRef}>
-              <button
-                type="button"
-                aria-haspopup="listbox"
-                aria-expanded={catOpen}
-                className="cat-btn"
-                onClick={() => setCatOpen(s => !s)}
-              >
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "inline-block" }}>
-                  {category || "All Categories"}
-                </span>
-                <ChevronDown style={{ width: 16, height: 16, color: "#94A3B8" }} />
-              </button>
-
-              {catOpen && (
-                <div role="listbox" className="cat-panel" aria-label="Categories">
-                  <div className="cat-item" role="option" aria-selected={category === ""} onClick={() => chooseCategory("")}>All Categories</div>
-                  {categories.map(c => (
-                    <div key={c} className="cat-item" role="option" aria-selected={category === c} onClick={() => chooseCategory(c)}>{c}</div>
-                  ))}
-                </div>
-              )}
-            </div>
-
           </div>
 
           <div className="meta">
-            {hasQuery ? `Showing ${filtered.length} result${filtered.length !== 1 ? "s" : ""}` : "Search to see results or choose a category"}
+            {hasQuery ? `Showing ${filtered.length} result${filtered.length !== 1 ? "s" : ""}` : "Search to see results"}
           </div>
         </div>
 
@@ -356,7 +269,13 @@ function SearchPageContent() {
                     className="connect"
                     onClick={(e) => { e.stopPropagation(); handleConnect(p.id, p.name); }}
                     disabled={connectingUserId === p.id || sentRequests.has(p.id) || acceptedConnections.has(p.id)}
-                    style={sentRequests.has(p.id) || acceptedConnections.has(p.id) ? { background: "#9CA3AF", color: "#fff", cursor: "not-allowed", boxShadow: "none" } : {}}
+                    style={
+                      acceptedConnections.has(p.id)
+                        ? { background: "#04c74cff", color: "#fff", cursor: "not-allowed", boxShadow: "none" }
+                        : sentRequests.has(p.id)
+                        ? { background: "#0f48e4ff)", color: "#fff", cursor: "not-allowed", boxShadow: "none" }
+                        : { color: "#fff" }
+                    }
                   >
                     {acceptedConnections.has(p.id) ? "Connected" : (connectingUserId === p.id ? "Connecting..." : (sentRequests.has(p.id) ? "Sent" : "Connect"))}
                   </button>
@@ -367,7 +286,7 @@ function SearchPageContent() {
 
           {!loading && hasQuery && filtered.length === 0 && (
             <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 22, color: "#64748B" }}>
-              No results found. Try different keywords or categories.
+              No results found. Try different keywords.
             </div>
           )}
         </div>

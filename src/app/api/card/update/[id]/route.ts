@@ -4,6 +4,8 @@ import { verify } from 'jsonwebtoken';
 import { prisma } from "@/lib/prisma";
 import { deleteFromCloudinary } from "@/lib/cloudinary";
 import { adminStorageBucket } from "@/lib/firebase-admin";
+import mammoth from 'mammoth';
+import { PDFDocument, StandardFonts } from 'pdf-lib';
 
 const JWT_SECRET = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'your-secret-key';
 const MAX_DOCUMENT_SIZE_BYTES = 1024 * 1024; // 1MB
@@ -44,22 +46,24 @@ export async function PATCH(
     const updateData: any = {};
     
     // Personal Information - Extract name fields
-    const firstName = formData.get('firstName') as string;
-    if (firstName !== null) updateData.firstName = firstName || undefined;
-    
-    const middleName = formData.get('middleName') as string;
-    if (middleName !== null) updateData.middleName = middleName || undefined;
-    
-    const lastName = formData.get('lastName') as string;
-    if (lastName !== null) updateData.lastName = lastName || undefined;
-    
+   const firstName = formData.get('firstName') as string | null;
+if (firstName !== null) updateData.firstName = firstName ?? "";
+
+const middleName = formData.get('middleName') as string | null;
+updateData.middleName = middleName ?? "";
+
+
+const lastName = formData.get('lastName') as string | null;
+updateData.lastName = lastName ?? "";
+
     // Construct fullName from firstName/middleName/lastName
     if (firstName !== null || middleName !== null || lastName !== null) {
-      const names = [
-        firstName || existingCard.firstName || '',
-        middleName || existingCard.middleName || '',
-        lastName || existingCard.lastName || ''
-      ];
+    const names = [
+  firstName ?? "",
+  middleName ?? "",
+  lastName ?? ""
+];
+
       updateData.fullName = names.filter(Boolean).join(' ').trim() || 'Unnamed';
     }
     
@@ -165,39 +169,99 @@ export async function PATCH(
     const status = formData.get('status') as string;
     if (status !== null) updateData.status = status;
 
-    // Handle document upload (optional, Firebase Storage)
+    // Handle document upload (optional, Firebase Storage with conversion)
     const documentFile = formData.get('document') as File;
     if (documentFile && documentFile.size > 0) {
-      if (documentFile.size > MAX_DOCUMENT_SIZE_BYTES) {
+      const maxDocSize = 10 * 1024 * 1024; // 10MB
+      if (documentFile.size > maxDocSize) {
         return NextResponse.json(
-          { error: 'Document size must be 1MB or less' },
+          { error: 'Document size must be less than 10MB' },
           { status: 400 }
         );
       }
 
-      const arrayBuffer = await documentFile.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
+      try {
+        const bucket = adminStorageBucket();
+        if (!bucket) {
+          return NextResponse.json({ error: 'Storage not available' }, { status: 503 });
+        }
 
-      const originalName = (documentFile as any).name || 'document.pdf';
-      const safeName = originalName.replace(/[^a-z0-9.]+/gi, '-').toLowerCase();
-      const timestamp = Date.now();
-      const filePath = `cards/documents/${decoded.userId}/${timestamp}-${safeName}`;
+        const originalName = (documentFile as any).name || 'document';
+        const safeName = originalName.replace(/[^a-z0-9.]+/gi, '-').toLowerCase();
+        const ext = safeName.split('.').pop() || '';
+        const timestamp = Date.now();
+        const targetPdfName = `${timestamp}-${safeName.replace(/\.(docx|doc|pdf)$/i, '')}.pdf`;
+        const filePath = `cards/documents/${decoded.userId}/${targetPdfName}`;
+        let pdfBuffer: Buffer;
 
-      const fileRef = adminStorageBucket.file(filePath);
+        if (/(docx|doc)$/i.test(ext)) {
+          console.log('[card/update] Converting DOC/DOCX to PDF inline');
+          const arrayBuffer = await documentFile.arrayBuffer();
+          const docBuffer = Buffer.from(arrayBuffer);
+          const mammothResult = await mammoth.extractRawText({ buffer: docBuffer });
+          const text = mammothResult.value || 'Empty document';
 
-      await fileRef.save(buffer, {
-        resumable: false,
-        metadata: {
-          contentType: documentFile.type || 'application/octet-stream',
-        },
-      });
+          const pdfDoc = await PDFDocument.create();
+          const page = pdfDoc.addPage();
+          const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+          const fontSize = 12;
+          const lineHeight = fontSize * 1.25;
+          const margin = 50;
+          const maxWidth = page.getWidth() - margin * 2;
 
-      const [signedUrl] = await fileRef.getSignedUrl({
-        action: 'read',
-        expires: '2100-01-01',
-      });
+          const words = text.replace(/\r/g, '').split(/\s+/);
+          let line = '';
+          let y = page.getHeight() - margin - fontSize;
 
-      updateData.documentUrl = signedUrl;
+          const lines: string[] = [];
+          for (const w of words) {
+            const testLine = line ? line + ' ' + w : w;
+            const width = font.widthOfTextAtSize(testLine, fontSize);
+            if (width > maxWidth) {
+              if (line) lines.push(line);
+              line = w;
+            } else {
+              line = testLine;
+            }
+          }
+          if (line) lines.push(line);
+
+          for (const l of lines) {
+            if (y < margin) {
+              const newPage = pdfDoc.addPage();
+              y = newPage.getHeight() - margin - fontSize;
+              page.drawText(''); // keep reference
+            }
+            page.drawText(l, { x: margin, y, size: fontSize, font });
+            y -= lineHeight;
+          }
+
+            pdfBuffer = Buffer.from(await pdfDoc.save());
+        } else if (/pdf/i.test(ext)) {
+          console.log('[card/update] Using existing PDF (upload only)');
+          const arrayBuffer = await documentFile.arrayBuffer();
+          pdfBuffer = Buffer.from(arrayBuffer);
+        } else {
+          return NextResponse.json(
+            { error: 'Unsupported document type. Use PDF, DOC, or DOCX.' },
+            { status: 400 }
+          );
+        }
+
+        const fileRef = bucket.file(filePath);
+        await fileRef.save(pdfBuffer, {
+          resumable: false,
+          metadata: { contentType: 'application/pdf' }
+        });
+        const [signedUrl] = await fileRef.getSignedUrl({ action: 'read', expires: '2100-01-01' });
+        updateData.documentUrl = signedUrl;
+      } catch (error: any) {
+        console.error('[card/update] Inline document conversion failed:', error);
+        return NextResponse.json(
+          { error: error.message || 'Failed to process document' },
+          { status: 500 }
+        );
+      }
     }
 
     // Handle profile image upload
@@ -221,7 +285,11 @@ export async function PATCH(
       const timestamp = Date.now();
       const filePath = `cards/profile-images/${decoded.userId}/${timestamp}-${safeName}`;
 
-      const fileRef = adminStorageBucket.file(filePath);
+      const bucket = adminStorageBucket();
+    if (!bucket) {
+      return NextResponse.json({ error: 'Firebase Storage not available during build' }, { status: 503 });
+    }
+    const fileRef = bucket.file(filePath);
 
       await fileRef.save(buffer, {
         resumable: false,
@@ -259,7 +327,11 @@ export async function PATCH(
       const timestamp = Date.now();
       const filePath = `cards/banner-images/${decoded.userId}/${timestamp}-${safeName}`;
 
-      const fileRef = adminStorageBucket.file(filePath);
+      const bucket = adminStorageBucket();
+    if (!bucket) {
+      return NextResponse.json({ error: 'Firebase Storage not available during build' }, { status: 503 });
+    }
+    const fileRef = bucket.file(filePath);
 
       await fileRef.save(buffer, {
         resumable: false,
@@ -297,7 +369,11 @@ export async function PATCH(
       const timestamp = Date.now();
       const filePath = `cards/cover-images/${decoded.userId}/${timestamp}-${safeName}`;
 
-      const fileRef = adminStorageBucket.file(filePath);
+      const bucket = adminStorageBucket();
+    if (!bucket) {
+      return NextResponse.json({ error: 'Firebase Storage not available during build' }, { status: 503 });
+    }
+    const fileRef = bucket.file(filePath);
 
       await fileRef.save(buffer, {
         resumable: false,

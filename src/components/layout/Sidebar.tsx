@@ -14,6 +14,7 @@ import {
   HelpCircle,
   Menu,
   X,
+  Bell,
 } from "lucide-react";
 import "./sidebar.css"; // 
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,20 +25,24 @@ const Sidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useAuth();
-  const [isMobile, setIsMobile] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [pendingConnections, setPendingConnections] = useState(0);
   const [contactsCount, setContactsCount] = useState(0);
+  const [notificationsCount, setNotificationsCount] = useState(0);
 
-  useEffect(() => {
+    useEffect(() => {
     // Set mounted flag to ensure client-side only updates
     setIsMounted(true);
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // 👇 ADD THIS — Sidebar listens for header hamburger toggle
+  useEffect(() => {
+    const toggle = () => setIsOpen(prev => !prev);
+    window.addEventListener("toggle-sidebar", toggle);
+
+    return () => window.removeEventListener("toggle-sidebar", toggle);
   }, []);
 
   useEffect(() => {
@@ -50,6 +55,7 @@ const Sidebar = () => {
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
         if (!token) return;
+
         const res = await fetch('/api/message/receive', {
           method: 'GET',
           headers: {
@@ -58,15 +64,127 @@ const Sidebar = () => {
           },
         });
         if (!res.ok) return;
+
         const data = await res.json();
-        const unread = (data.messages || []).filter((m: any) => m && (m.read === false || m.read === undefined)).length;
-        setUnreadCount(unread);
+        const inboxMessages = data.messages || [];
+        const sentMessages = data.sentMessages || [];
+
+        const inboxBySender = new Map<string, any[]>();
+        (inboxMessages as any[]).forEach((m: any) => {
+          if (!m || !m.senderId) return;
+          const arr = inboxBySender.get(m.senderId) || [];
+          arr.push(m);
+          inboxBySender.set(m.senderId, arr);
+        });
+
+        const sentByReceiver = new Map<string, any[]>();
+        (sentMessages as any[]).forEach((m: any) => {
+          if (!m || !m.receiverId) return;
+          const arr = sentByReceiver.get(m.receiverId) || [];
+          arr.push(m);
+          sentByReceiver.set(m.receiverId, arr);
+        });
+
+        let readPointers: Record<string, string> = {};
+        try {
+          const stored = localStorage.getItem('dashboard-message-read-pointers');
+          if (stored) readPointers = JSON.parse(stored);
+        } catch {
+          readPointers = {};
+        }
+
+        const allPartyIds = new Set<string>([
+          ...Array.from(inboxBySender.keys()),
+          ...Array.from(sentByReceiver.keys()),
+        ]);
+
+        let totalUnread = 0;
+
+        for (const partyId of allPartyIds) {
+          const inboxForParty = inboxBySender.get(partyId) || [];
+          const sentForParty = sentByReceiver.get(partyId) || [];
+
+          const combined = [
+            ...inboxForParty.map((m: any) => ({
+              date: m.createdAt || m.date || new Date().toISOString(),
+              direction: 'in' as const,
+            })),
+            ...sentForParty.map((m: any) => ({
+              date: m.createdAt || m.date || new Date().toISOString(),
+              direction: 'out' as const,
+            })),
+          ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+          if (!combined.length) continue;
+
+          const readPointer = readPointers[partyId];
+          const lastReadAt = readPointer ? new Date(readPointer).getTime() : 0;
+
+          const incomingCount = combined
+            .filter(item => item.direction === 'in' && new Date(item.date).getTime() > lastReadAt)
+            .length;
+
+          if (incomingCount > 0) {
+            totalUnread += incomingCount;
+          }
+        }
+
+        setUnreadCount(totalUnread);
       } catch (e) {
         // ignore
       }
     };
 
     fetchUnread();
+  }, []);
+
+  // Fetch notifications count for Notifications badge
+  useEffect(() => {
+    let intervalId: any;
+
+    const computeCount = (list: any[]) => {
+      let cleared: string[] = [];
+      try {
+        if (typeof window !== 'undefined') {
+          const stored = window.localStorage.getItem('dashboard-cleared-notifications');
+          if (stored) cleared = JSON.parse(stored);
+        }
+      } catch {
+        cleared = [];
+      }
+      const clearedSet = new Set(cleared || []);
+      return list.filter((n: any) => !clearedSet.has(n.id)).length;
+    };
+
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch('/api/notifications', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = Array.isArray(data?.notifications) ? data.notifications : [];
+        setNotificationsCount(computeCount(list));
+      } catch (_) {
+        // ignore
+      }
+    };
+
+    fetchNotifications();
+    intervalId = setInterval(fetchNotifications, 20000);
+
+    const onUpdated = () => {
+      fetchNotifications();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('notifications-updated', onUpdated as any);
+    }
+
+    return () => {
+      clearInterval(intervalId);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('notifications-updated', onUpdated as any);
+      }
+    };
   }, []);
 
   // Fetch pending connection requests count for badge
@@ -142,6 +260,7 @@ const Sidebar = () => {
 
   const menuItems = [
     { name: "Dashboard", path: "/dashboard", icon: <LayoutDashboard /> },
+    { name: "Notifications", path: "/dashboard/notifications", icon: <Bell /> },
     { name: "Messages", path: "/dashboard/messages", icon: <MessageSquare /> },
     { name: "Connections", path: "/dashboard/connections", icon: <Users2 /> },
     { name: "Contacts", path: "/dashboard/contacts", icon: <Users /> },
@@ -155,8 +274,8 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Menu Button (only when sidebar is closed) */}
-      {isMounted && isMobile && !isOpen && (
+      {/* Mobile Menu Button (only when sidebar is closed) 
+      {isMounted && !isOpen && (
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
           className={"mobileToggle mobileToggleClosed"}
@@ -166,10 +285,10 @@ const Sidebar = () => {
           <Menu size={22} />
         </motion.button>
       )}
-
+*/}
       {/* Overlay (for mobile) */}
       <AnimatePresence>
-        {isMobile && isOpen && (
+        {isOpen && (
           <motion.div
             className="mobileOverlay"
             initial={{ opacity: 0 }}
@@ -182,10 +301,7 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       <motion.aside
-        className={`sidebar ${isMobile ? (isOpen ? "open" : "closed") : ""}`}
-        initial={{ x: isMobile ? -300 : 0 }}
-        animate={{ x: isMobile ? (isOpen ? 0 : -300) : 0 }}
-        transition={{ duration: 0.35, ease: "easeInOut" }}
+        className={`sidebar ${isOpen ? "open" : "closed"}`}
       >
         {/* Header */}
         <div className="sidebarHeader">
@@ -212,11 +328,14 @@ const Sidebar = () => {
                 key={item.name}
                 className={`navItem ${isActive ? "activeNav" : ""}`}
                 onClick={() => {
-                  if (isMobile) setIsOpen(false);
+                  setIsOpen(false);
                 }}
               >
                 <span className="navIcon">{item.icon}</span>
                 <span>{item.name}</span>
+                {item.name === "Notifications" && notificationsCount > 0 && pathname !== "/dashboard/notifications" && (
+                  <span className="navBadge">{notificationsCount}</span>
+                )}
                 {item.name === "Messages" && unreadCount > 0 && pathname !== "/dashboard/messages" && (
                   <span className="navBadge">{unreadCount}</span>
                 )}
@@ -241,7 +360,7 @@ const Sidebar = () => {
                 key={item.name}
                 className={`footerLink ${isActive ? "activeNav" : ""}`}
                 onClick={() => {
-                  if (isMobile) setIsOpen(false);
+                  setIsOpen(false);
                 }}
               >
                 <span className="navIcon">{item.icon}</span>
