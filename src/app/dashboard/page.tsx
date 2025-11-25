@@ -61,7 +61,7 @@ const renderCardPreview = (card: Card) => {
     cardName: card.cardName || card.name || '',
     title: card.title || '',
     company: card.company || '',
-    location: card.location || '',
+    location: card.location || (card as any).user?.location || '',
     about: card.bio || card.about || card.description || '',
     skills: card.skills || 'SEO, Content Creation, Analytics, Social Media',
     portfolio: card.portfolio || '[Link] Latest Campaigns',
