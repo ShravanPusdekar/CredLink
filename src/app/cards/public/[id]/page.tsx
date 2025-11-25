@@ -10,6 +10,7 @@ import DigitalCardPreview from "@/components/cards/DigitalCardPreview";
 import FlatCardPreview from "@/components/cards/FlatCardPreview";
 import ModernCardPreview from "@/components/cards/ModernCardPreview";
 import SleekCardPreview from "@/components/cards/SleekCardPreview";
+import { capitalizeFirstLetter } from '@/lib/utils';
 
 // ----------------- Card Type Definition -----------------
 interface Card {
@@ -64,12 +65,15 @@ interface ConnectionFormData {
 
 // ----------------- Card Preview Component -----------------
 const CardPreview: React.FC<{ card: Card }> = ({ card }) => {
+  const capitalizedFullName = capitalizeFirstLetter(card.fullName || "");
+  const nameParts = capitalizedFullName.split(" ");
+  
 const commonProps = {
-  firstName: card.fullName ? card.fullName.split(" ")[0] : "",
-  middleName: card.fullName?.split(" ").length === 3 ? card.fullName.split(" ")[1] : "",
-  lastName: card.fullName ? card.fullName.split(" ").slice(-1).join("") : "",
-
-  title: card.title || "",
+  firstName: nameParts[0] || "",
+  middleName: nameParts.length === 3 ? nameParts[1] : "",
+  lastName: nameParts.length >= 2 ? nameParts.slice(-1).join("") : "",
+  cardName: capitalizeFirstLetter(card.name || ""),
+  title: capitalizeFirstLetter(card.title || ""),
   company: card.company || "",
   location: card.location || "",
   about: card.bio || card.about || card.description || "",
