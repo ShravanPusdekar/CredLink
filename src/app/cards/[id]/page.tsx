@@ -283,11 +283,31 @@ const handleDelete = async () => {
     cardUrl: `${typeof window !== 'undefined' ? window.location.origin : ''}/cards/public/${cardId}`,
   };
 
-  const copyToClipboard = async (text: string) => {
-    await navigator.clipboard.writeText(text);
+ const copyToClipboard = async (text: string) => {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      // Mobile fallback
+      const input = document.createElement("input");
+      input.value = text;
+      document.body.appendChild(input);
+      input.select();
+      input.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+      document.body.removeChild(input);
+    }
+
     setCopied(true);
+    toast.success("Link copied!");
     setTimeout(() => setCopied(false), 1500);
-  };
+
+  } catch (err) {
+    console.error("Copy failed:", err);
+    toast.error("Unable to copy. Try manually.");
+  }
+};
+
 
   const downloadQR = () => {
     // Generate QR code for download regardless of current tab
@@ -501,6 +521,7 @@ const handleDelete = async () => {
       }
     }
   };
+  
 
   const lineData = {
     labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],

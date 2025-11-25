@@ -2,7 +2,16 @@
 
 import { Toaster } from "react-hot-toast"
 
+import { useEffect } from "react";
+import { toast } from "react-hot-toast";
+
 export function ToastProvider() {
+  // Disable all success notifications globally
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    (toast as any).success = () => {};
+  }, []);
+
   return (
     <Toaster
       position="top-center"

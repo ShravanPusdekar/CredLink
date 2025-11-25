@@ -60,7 +60,7 @@ const Dashboard = () => {
  const [selectedDocumentUrl, setSelectedDocumentUrl] = useState<string | null>(null);
 
  // Card Preview Renderer (Exact Copy from Edit Page)
- const renderCardPreview = (card: Card) => {
+  const renderCardPreview = (card: Card) => {
   // Use EXACT same prop mapping as edit page
   const commonProps = {
     firstName: card.firstName || '',
@@ -71,9 +71,9 @@ const Dashboard = () => {
     company: card.company || '',
     location: card.location || '',
     about: card.bio || card.about || card.description || '',
-    skills: card.skills || 'SEO, Content Creation, Analytics, Social Media',
-    portfolio: card.portfolio || '[Link] Latest Campaigns',
-    experience: card.experience || `${card.title || 'Lead SEO Specialist'}${card.company ? ` @ ${card.company}` : ''} (2021-Present)`,
+    skills: card.skills || '',
+    portfolio: card.portfolio || '',
+    experience: card.experience || '',
     services: card.services || '',
     review: card.review || '',
     photo: card.profileImage || card.photo || '',
@@ -129,7 +129,7 @@ const Dashboard = () => {
      // console.log('✅ Fetched cards:', data.cards);
       //console.log('🎨 Design values:', data.cards.map((c: any) => ({ id: c.id, design: c.selectedDesign })));
       setCardsData(data.cards);
-      toast.success(`Loaded ${data.count} card(s)`);
+      // Removed success toast notification for loaded cards
     } else {
       toast.error(data.error || 'Failed to fetch cards');
     }
