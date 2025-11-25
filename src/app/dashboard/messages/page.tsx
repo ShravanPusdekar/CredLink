@@ -35,7 +35,25 @@ export default function MessagesPage() {
   // --- Logic & State ---
   const [isMobile, setIsMobile] = useState(false);
   const [messages, setMessages] = useState<MessageItem[]>([]);
-  
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [replyId, setReplyId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const conversationRef = useRef<HTMLDivElement | null>(null);
+  const [activeFilter, setActiveFilter] = useState<"All" | "Unread" | "Replied">("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const [chatUpdateTrigger, setChatUpdateTrigger] = useState(0);
+  const [isNearBottom, setIsNearBottom] = useState(true);
+
+  const handleConversationScroll = () => {
+    const container = conversationRef.current;
+    if (!container) return;
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+    setIsNearBottom(distanceFromBottom < 80);
+  };
+
   useEffect(() => {
     const mql = window.matchMedia("(max-width: 640px)");
     const onChange = () => setIsMobile(mql.matches);
@@ -50,6 +68,135 @@ export default function MessagesPage() {
 
   useEffect(() => {
     fetchMessages();
+
+    // Mark message-related notifications as cleared for this user
+    const clearMessageNotifications = async () => {
+      try {
+        const res = await fetch('/api/notifications', { credentials: 'include' });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = Array.isArray(data?.notifications) ? data.notifications : [];
+        const messageIds = list
+          .filter((n: any) => n && n.title === 'Message received')
+          .map((n: any) => n.id as string);
+
+        if (typeof window === 'undefined' || messageIds.length === 0) return;
+
+        let existing: string[] = [];
+        try {
+          const stored = window.localStorage.getItem('dashboard-cleared-notifications');
+          if (stored) existing = JSON.parse(stored);
+        } catch {
+          existing = [];
+        }
+        const setExisting = new Set(existing || []);
+        messageIds.forEach((id: string) => setExisting.add(id));
+        const next = Array.from(setExisting);
+        window.localStorage.setItem('dashboard-cleared-notifications', JSON.stringify(next));
+        window.dispatchEvent(new Event('notifications-updated'));
+      } catch {
+        // ignore
+      }
+    };
+
+    clearMessageNotifications();
+  }, []);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  // Listen for message updates from other parts of the app
+  useEffect(() => {
+    const handleMessageUpdate = () => {
+      fetchMessages();
+    };
+
+    window.addEventListener('message-sent', handleMessageUpdate);
+    window.addEventListener('messages-updated', handleMessageUpdate);
+
+    return () => {
+      window.removeEventListener('message-sent', handleMessageUpdate);
+      window.removeEventListener('messages-updated', handleMessageUpdate);
+    };
+  }, []);
+
+  // Real-time polling for new messages
+  useEffect(() => {
+    // Set up polling interval for real-time updates
+    const pollingInterval = setInterval(() => {
+      fetchMessages();
+    }, 5000); // Poll every 5 seconds
+
+    // Clear interval on component unmount
+    return () => {
+      clearInterval(pollingInterval);
+    };
+  }, []);
+
+  // Enhanced real-time updates when chat is open
+  useEffect(() => {
+    if (!detailId) return;
+
+    // Store the current conversation length to detect new messages
+    let previousMessageCount = 0;
+    const activeMessage = messages.find(m => m.senderId === detailId);
+    if (activeMessage && activeMessage.thread) {
+      previousMessageCount = activeMessage.thread.length;
+    }
+
+    // Poll more frequently when a chat is open for real-time conversation updates
+    const chatInterval = setInterval(async () => {
+      await fetchMessages();
+      
+      // Force chat update to refresh the conversation thread
+      setChatUpdateTrigger(prev => prev + 1);
+      
+      // Check if the active conversation has new messages
+      const updatedMessage = messages.find(m => m.senderId === detailId);
+      if (updatedMessage && updatedMessage.thread) {
+        const currentMessageCount = updatedMessage.thread.length;
+        
+        // If new messages were added, trigger UI updates
+        if (currentMessageCount > previousMessageCount) {
+          previousMessageCount = currentMessageCount;
+          
+          // Force re-render by updating the state
+          setMessages(prev => prev.map(m => 
+            m.senderId === detailId ? updatedMessage : m
+          ));
+          
+          // Auto-scroll to bottom to show new messages only when user is near bottom
+          if (isNearBottom) {
+            setTimeout(() => {
+              const container = conversationRef.current;
+              if (container) {
+                container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+              }
+            }, 200);
+          }
+        }
+      }
+    }, 1500); // Poll every 1.5 seconds when chat is open
+
+    return () => {
+      clearInterval(chatInterval);
+    };
+  }, [detailId, chatUpdateTrigger, messages, isNearBottom]);
+
+  // Also fetch when page becomes visible again (user returns to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchMessages();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchMessages = async () => {
@@ -171,21 +318,13 @@ export default function MessagesPage() {
     }).format(d);
   };
 
-  const [activeFilter, setActiveFilter] = useState<"All" | "Unread" | "Replied">("All");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const [replyId, setReplyId] = useState<string | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const conversationRef = useRef<HTMLDivElement | null>(null);
-
   useEffect(() => {
     if (!detailId) return;
     const container = conversationRef.current;
     if (!container) return;
-    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
-  }, [detailId, messages]);
+    container.scrollTo({ top: container.scrollHeight, behavior: 'auto' });
+    setIsNearBottom(true);
+  }, [detailId]);
 
   const filteredMessages = useMemo(() => {
     let filtered = messages;
@@ -208,8 +347,9 @@ export default function MessagesPage() {
     });
   }, [messages, activeFilter, searchQuery, sortOrder]);
 
-  const openDetail = (id: string) => {
-    const msg = messages.find(m => m.id === id);
+  const openDetail = (senderId: string) => {
+    const msg = messages.find(m => m.senderId === senderId);
+
     if (msg) {
       const latestDate = msg.thread && msg.thread.length > 0
         ? msg.thread[msg.thread.length - 1].date
@@ -225,28 +365,61 @@ export default function MessagesPage() {
     }
 
     setMessages(prev => prev.map(m =>
-      m.id === id
+      m.senderId === senderId
         ? { ...m, read: true, incomingCount: 0, status: m.status === "New" ? "Read" : m.status }
         : m
     ));
-    setDetailId(id);
-    setReplyId(id);
+    setDetailId(senderId);
+    setReplyId(senderId);
   };
 
-  const deleteMessage = (id: string) => {
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, status: "Archived" } : m));
+  const deleteMessage = (senderId: string) => {
+    const messageToDelete = messages.find(m => m.senderId === senderId);
+
+    if (!messageToDelete) return;
+
+    // Remove from UI immediately
+    setMessages(prev => prev.filter(m => m.senderId !== messageToDelete.senderId));
+    
+    // Close detail view if this conversation was open
+    if (detailId === senderId) {
+      setDetailId(null);
+      setReplyId(null);
+    }
+
+    // Delete entire conversation from database
     const sendDeleteRequest = async () => {
-      try { await fetch(`/api/message/delete?id=${encodeURIComponent(id)}`, { method: "DELETE" }); } 
-      catch (error) { console.error("Error deleting message:", error); }
+      try {
+        const response = await fetch('/api/message/delete', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            userId: messageToDelete.senderId
+          })
+        });
+
+        if (!response.ok) {
+          console.error('Failed to delete conversation');
+          // If API fails, refresh messages to get current state
+          fetchMessages();
+        }
+      } catch (error) {
+        console.error('Error deleting conversation:', error);
+        // If API fails, refresh messages to get current state
+        fetchMessages();
+      }
     };
+
     sendDeleteRequest();
-    if (detailId === id) setDetailId(null);
-    if (replyId === id) setReplyId(null);
   };
 
   const sendReply = async () => {
     if (!replyId || !replyText.trim()) return;
-    const originalMessage = messages.find(m => m.id === replyId);
+    const originalMessage = messages.find(m => m.senderId === replyId);
+
     if (!originalMessage) return;
 
     try {
@@ -264,7 +437,7 @@ export default function MessagesPage() {
       });
 
       if (response.ok) {
-        setMessages(prev => prev.map(m => m.id === replyId ? { 
+        setMessages(prev => prev.map(m => m.senderId === replyId ? { 
           ...m, status: "Replied", read: true,
           thread: [...(m.thread || []), { text: replyText, date: new Date().toISOString(), direction: 'out' }]
         } : m));
@@ -479,8 +652,8 @@ export default function MessagesPage() {
       lineHeight: "1.6",
       boxShadow: "0 2px 4px rgba(0,0,0,0.04)",
       maxWidth: "80%",
-      wordBreak: "break-word",
-      overflowWrap: "break-word",
+      wordBreak: "break-word" as const,
+      overflowWrap: "break-word" as const,
     },
     bubbleOut: {
       background: colors.primaryGradient,
@@ -491,8 +664,8 @@ export default function MessagesPage() {
       lineHeight: "1.6",
       boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
       maxWidth: "80%",
-      wordBreak: "break-word",
-      overflowWrap: "break-word",
+      wordBreak: "break-word" as const,
+      overflowWrap: "break-word" as const,
     },
     composer: {
       padding: "20px",
@@ -539,7 +712,7 @@ export default function MessagesPage() {
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   `;
 
-  const activeMessage = detailId ? messages.find(m => m.id === detailId) : null;
+  const activeMessage = detailId ? messages.find(m => m.senderId === detailId) : null;
 
   return (
     <div style={styles.container}>
@@ -608,7 +781,7 @@ export default function MessagesPage() {
               {filteredMessages.map(m => (
                 <div
                   key={m.id}
-                  onClick={() => openDetail(m.id)}
+                  onClick={() => openDetail(m.senderId)}
                   onMouseEnter={() => setHoveredId(m.id)}
                   onMouseLeave={() => setHoveredId(null)}
                   style={styles.messageRow(m.id, m.read)}
@@ -680,7 +853,7 @@ export default function MessagesPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteMessage(m.id);
+                          deleteMessage(m.senderId);
                         }}
                         style={{
                           background: "transparent",
@@ -732,7 +905,7 @@ export default function MessagesPage() {
             </div>
 
             {/* Conversation */}
-            <div ref={conversationRef} style={styles.chatBody}>
+            <div ref={conversationRef} style={styles.chatBody} onScroll={handleConversationScroll}>
               <div style={{ textAlign: "center", margin: "10px 0" }}>
                 <span style={{ fontSize: "11px", fontWeight: 700, color: "#94A3B8", backgroundColor: "#F1F5F9", padding: "4px 12px", borderRadius: "20px" }}>
                   {new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(activeMessage.date))}

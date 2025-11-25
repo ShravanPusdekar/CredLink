@@ -46,22 +46,24 @@ export async function PATCH(
     const updateData: any = {};
     
     // Personal Information - Extract name fields
-    const firstName = formData.get('firstName') as string;
-    if (firstName !== null) updateData.firstName = firstName || undefined;
-    
-    const middleName = formData.get('middleName') as string;
-    if (middleName !== null) updateData.middleName = middleName || undefined;
-    
-    const lastName = formData.get('lastName') as string;
-    if (lastName !== null) updateData.lastName = lastName || undefined;
-    
+   const firstName = formData.get('firstName') as string | null;
+if (firstName !== null) updateData.firstName = firstName ?? "";
+
+const middleName = formData.get('middleName') as string | null;
+updateData.middleName = middleName ?? "";
+
+
+const lastName = formData.get('lastName') as string | null;
+updateData.lastName = lastName ?? "";
+
     // Construct fullName from firstName/middleName/lastName
     if (firstName !== null || middleName !== null || lastName !== null) {
-      const names = [
-        firstName || existingCard.firstName || '',
-        middleName || existingCard.middleName || '',
-        lastName || existingCard.lastName || ''
-      ];
+    const names = [
+  firstName ?? "",
+  middleName ?? "",
+  lastName ?? ""
+];
+
       updateData.fullName = names.filter(Boolean).join(' ').trim() || 'Unnamed';
     }
     
