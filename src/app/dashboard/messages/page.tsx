@@ -11,6 +11,9 @@ interface MessageItem {
   id: string;
   name: string;
   email: string;
+  title?: string;
+  company?: string;
+  profileImage?: string;
   message: string;
   date: string;
   status: MessageStatus;
@@ -214,7 +217,7 @@ export default function MessagesPage() {
         const inboxMessages = data.messages || [];
         const sentMessages = data.sentMessages || [];
 
-        const sendersMap: Record<string, { id: string; fullName?: string; email?: string }> = {};
+        const sendersMap: Record<string, { id: string; fullName?: string; email?: string; title?: string; company?: string; profileImage?: string }> = {};
         (data.senders || []).forEach((s: any) => {
           sendersMap[s.id] = s;
         });
@@ -291,6 +294,9 @@ export default function MessagesPage() {
               id: latest.id,
               name: sender.fullName || 'Unknown User',
               email: sender.email || '',
+              title: sender.title,
+              company: sender.company,
+              profileImage: sender.profileImage,
               message: latest.text,
               date: latest.date,
               status: conversationStatus,
@@ -369,6 +375,10 @@ export default function MessagesPage() {
         ? { ...m, read: true, incomingCount: 0, status: m.status === "New" ? "Read" : m.status }
         : m
     ));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('messages-updated'));
+      window.dispatchEvent(new Event('message-read'));
+    }
     setDetailId(senderId);
     setReplyId(senderId);
   };
@@ -446,7 +456,19 @@ export default function MessagesPage() {
     } catch (err) { alert('Error sending reply.'); }
   };
 
-  const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const getInitials = (name: string, email?: string) => {
+    const value = name || email || "U";
+    const base = value.includes("@") ? value.split("@")[0] : value;
+    return (
+      base
+        .split(" ")
+        .filter(Boolean)
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2) || "U"
+    );
+  };
 
   // ------------------ STYLES ------------------ //
   
@@ -459,7 +481,7 @@ export default function MessagesPage() {
     textLight: "#94A3B8",
     primary: "#4F46E5",
     primaryLight: "#EEF2FF",
-    primaryGradient: "linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%)",
+    primaryGradient: "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
     border: "#E2E8F0",
     danger: "#EF4444",
     successBg: "#ECFDF5",
@@ -575,12 +597,14 @@ export default function MessagesPage() {
       gap: "16px",
       position: "relative" as const,
     }),
-    avatar: (name: string) => ({
+    avatar: (name: string, profileImage?: string) => ({
       width: "48px",
       height: "48px",
-      borderRadius: "14px",
-      background: colors.primaryGradient,
-      color: "#FFF",
+      borderRadius: "50%",
+      background: profileImage ? `url(${profileImage})` : colors.primaryGradient,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      color: profileImage ? "#FFF" : "#FFF",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -588,6 +612,7 @@ export default function MessagesPage() {
       fontWeight: 700,
       flexShrink: 0,
       boxShadow: "0 4px 12px rgba(99, 102, 241, 0.25)",
+      overflow: "hidden",
     }),
     unreadDot: {
       display: "none",
@@ -787,8 +812,16 @@ export default function MessagesPage() {
                   style={styles.messageRow(m.id, m.read)}
                 >
                   {/* Avatar */}
-                  <div style={styles.avatar(m.name)}>
-                    {getInitials(m.name)}
+                  <div style={styles.avatar(m.name, m.profileImage)}>
+                    {m.profileImage ? (
+                      <img
+                        src={m.profileImage}
+                        alt={m.name}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      getInitials(m.name, m.email)
+                    )}
                   </div>
 
                   {/* Content */}
@@ -825,6 +858,22 @@ export default function MessagesPage() {
                         )}
                       </div>
                     </div>
+
+                    {(m.title || m.company) && (
+                      <p
+                        style={{
+                          margin: 0,
+                          marginBottom: 2,
+                          fontSize: "12px",
+                          color: colors.textSec,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {[m.title, m.company].filter(Boolean).join(" • ")}
+                      </p>
+                    )}
 
                     <p
                       className="message-text-left"
@@ -891,11 +940,31 @@ export default function MessagesPage() {
                     <ChevronLeft style={{ color: colors.textSec }} />
                   </button>
                 )}
-                <div style={{ ...styles.avatar(activeMessage.name), width: "40px", height: "40px", fontSize: "12px", background: "#1E293B" }}>
-                  {getInitials(activeMessage.name)}
+                <div
+                  style={{
+                    ...styles.avatar(activeMessage.name, activeMessage.profileImage),
+                    width: "40px",
+                    height: "40px",
+                    fontSize: "12px",
+                  }}
+                >
+                  {activeMessage.profileImage ? (
+                    <img
+                      src={activeMessage.profileImage}
+                      alt={activeMessage.name}
+                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    getInitials(activeMessage.name, activeMessage.email)
+                  )}
                 </div>
                 <div>
                   <h2 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: colors.textMain }}>{activeMessage.name}</h2>
+                  {(activeMessage.title || activeMessage.company) && (
+                    <p style={{ fontSize: "12px", margin: 0, color: colors.textSec }}>
+                      {[activeMessage.title, activeMessage.company].filter(Boolean).join(" • ")}
+                    </p>
+                  )}
                   <p style={{ fontSize: "12px", margin: 0, color: colors.textSec }}>{activeMessage.email}</p>
                 </div>
               </div>
@@ -906,27 +975,56 @@ export default function MessagesPage() {
 
             {/* Conversation */}
             <div ref={conversationRef} style={styles.chatBody} onScroll={handleConversationScroll}>
-              <div style={{ textAlign: "center", margin: "10px 0" }}>
-                <span style={{ fontSize: "11px", fontWeight: 700, color: "#94A3B8", backgroundColor: "#F1F5F9", padding: "4px 12px", borderRadius: "20px" }}>
-                  {new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(activeMessage.date))}
-                </span>
-              </div>
+              {(() => {
+                const threadItems = (activeMessage.thread && activeMessage.thread.length > 0
+                  ? activeMessage.thread
+                  : [
+                      { text: activeMessage.message, date: activeMessage.date, direction: 'in' as const },
+                    ]);
 
-              {(activeMessage.thread && activeMessage.thread.length > 0 ? activeMessage.thread : [
-                { text: activeMessage.message, date: activeMessage.date, direction: 'in' as const }
-              ]).map((item, idx) => {
-                const isIncoming = item.direction === 'in';
-                return (
-                  <div key={idx} style={{ display: "flex", width: "100%", justifyContent: isIncoming ? "flex-start" : "flex-end" }}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: isIncoming ? "flex-start" : "flex-end", width: "100%" }}>
-                      <div style={isIncoming ? styles.bubbleIn : styles.bubbleOut}>{item.text}</div>
-                      <span style={{ fontSize: "10px", marginTop: "6px", color: "#94A3B8", fontWeight: 500 }}>
-                        {isIncoming ? activeMessage.name.split(' ')[0] : 'You'} • {formatDate(item.date).split(',')[1].trim()}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                let lastDateKey: string | null = null;
+
+                return threadItems.map((item, idx) => {
+                  const isIncoming = item.direction === 'in';
+                  const itemDate = new Date(item.date);
+                  const dateKey = itemDate.toDateString();
+                  const showDateHeader = dateKey !== lastDateKey;
+                  lastDateKey = dateKey;
+
+                  return (
+                    <React.Fragment key={item.id || idx}>
+                      {showDateHeader && (
+                        <div style={{ textAlign: "center", margin: "10px 0" }}>
+                          <span
+                            style={{
+                              fontSize: "11px",
+                              fontWeight: 700,
+                              color: "#94A3B8",
+                              backgroundColor: "#F1F5F9",
+                              padding: "4px 12px",
+                              borderRadius: "20px",
+                            }}
+                          >
+                            {new Intl.DateTimeFormat(undefined, {
+                              month: "short",
+                              day: "numeric",
+                            }).format(itemDate)}
+                          </span>
+                        </div>
+                      )}
+
+                      <div style={{ display: "flex", width: "100%", justifyContent: isIncoming ? "flex-start" : "flex-end" }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: isIncoming ? "flex-start" : "flex-end", width: "100%" }}>
+                          <div style={isIncoming ? styles.bubbleIn : styles.bubbleOut}>{item.text}</div>
+                          <span style={{ fontSize: "10px", marginTop: "6px", color: "#94A3B8", fontWeight: 500 }}>
+                            {isIncoming ? activeMessage.name.split(' ')[0] : 'You'} • {formatDate(item.date).split(',')[1].trim()}
+                          </span>
+                        </div>
+                      </div>
+                    </React.Fragment>
+                  );
+                });
+              })()}
             </div>
 
             {/* Composer */}

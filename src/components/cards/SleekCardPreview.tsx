@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { DigitalCardProps } from "./DigitalCardPreview";
 import styles from "./cardType.module.css";
+import { capitalizeFirstLetter } from '@/lib/utils';
 
 // Sleek Template
 const SleekCardPreview: React.FC<DigitalCardProps> = ({
@@ -32,8 +33,11 @@ const SleekCardPreview: React.FC<DigitalCardProps> = ({
   documentUrl,
   onDocumentClick,
 }) => {
+  const capitalizedFirstName = capitalizeFirstLetter(firstName);
+  const capitalizedMiddleName = capitalizeFirstLetter(middleName);
+  const capitalizedLastName = capitalizeFirstLetter(lastName);
   const fullName =
-    [firstName, middleName, lastName].filter(Boolean).join(" ") ||
+    [capitalizedFirstName, capitalizedMiddleName, capitalizedLastName].filter(Boolean).join(" ") ||
     "Your Name";
 
   const firstLetter = fullName.charAt(0).toUpperCase();
@@ -58,43 +62,79 @@ const SleekCardPreview: React.FC<DigitalCardProps> = ({
   const servicesList = services.split(",").map((s) => s.trim()).filter(Boolean);
   const reviewList = review.split(",").map((s) => s.trim()).filter(Boolean);
 
-  const renderItem = (title: string, subtitle?: string) => (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        background: "#fff",
-        borderRadius: 12,
-        padding: "12px 14px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        marginBottom: 10,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <div
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            background: themeColor1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#fff",
-            fontWeight: 700,
-          }}
-        >
-          ★
-        </div>
-        <div>
-          <div style={{ fontWeight: 700, color: "#111827" }}>{title}</div>
-          {subtitle && (
-            <div style={{ fontSize: 12, color: "#6B7280" }}>{subtitle}</div>
-          )}
+  const renderItem = (title: string, subtitle?: string) => {
+    const isUrl = /^https?:\/\//i.test(title) || /^[\w.-]+\.[a-z]{2,}/i.test(title);
+    const href = isUrl ? (/^https?:\/\//i.test(title) ? title : `https://${title}`) : undefined;
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          background: "#fff",
+          borderRadius: 12,
+          padding: "12px 14px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+          marginBottom: 10,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              background: themeColor1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              fontWeight: 700,
+            }}
+          >
+            ★
+          </div>
+          <div>
+            {isUrl && href ? (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontWeight: 700,
+                  color: "#111827",
+                  textDecoration: "none",
+                  display: "block",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "100%",
+                }}
+              >
+                {title}
+              </a>
+            ) : (
+              <div
+                style={{
+                  fontWeight: 700,
+                  color: "#111827",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: "100%",
+                }}
+              >
+                {title}
+              </div>
+            )}
+            {subtitle && (
+              <div style={{ fontSize: 12, color: "#6B7280" }}>{subtitle}</div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderPanelContent = (section: Section) => {
     const mapSection = {

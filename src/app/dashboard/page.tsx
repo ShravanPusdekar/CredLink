@@ -11,6 +11,7 @@ import DigitalCardPreview, { DigitalCardProps } from "@/components/cards/Digital
 import FlatCardPreview from '@/components/cards/FlatCardPreview';
 import ModernCardPreview from "@/components/cards/ModernCardPreview";
 import SleekCardPreview from "@/components/cards/SleekCardPreview";
+import { capitalizeFirstLetter } from '@/lib/utils';
 
 // ----------------- Card Type Definition -----------------
 interface Card {
@@ -61,19 +62,23 @@ const Dashboard = () => {
 
  // Card Preview Renderer (Exact Copy from Edit Page)
  const renderCardPreview = (card: Card) => {
+  // Split fullName with capitalization
+  const capitalizedFullName = capitalizeFirstLetter(card.fullName || '');
+  const nameParts = capitalizedFullName.split(' ');
+  
   // Use EXACT same prop mapping as edit page
   const commonProps = {
-    firstName: card.firstName || '',
-    middleName: card.middleName || '',
-    lastName: card.lastName || '',
-    cardName: card.cardName || card.name || '',
+    firstName: nameParts[0] || '',
+    middleName: nameParts.length === 3 ? nameParts[1] : '',
+    lastName: nameParts.length >= 2 ? nameParts.slice(-1).join('') : '',
+    cardName: capitalizeFirstLetter(card.cardName || card.name || ''),
     title: card.title || '',
     company: card.company || '',
     location: card.location || (card as any).user?.location || '',
     about: card.bio || card.about || card.description || '',
-    skills: card.skills || 'SEO, Content Creation, Analytics, Social Media',
-    portfolio: card.portfolio || '[Link] Latest Campaigns',
-    experience: card.experience || `${card.title || 'Lead SEO Specialist'}${card.company ? ` @ ${card.company}` : ''} (2021-Present)`,
+    skills: card.skills || '',
+    portfolio: card.portfolio || '',
+    experience: card.experience || '',
     services: card.services || '',
     review: card.review || '',
     photo: card.profileImage || card.photo || '',
@@ -129,7 +134,7 @@ const Dashboard = () => {
      // console.log('✅ Fetched cards:', data.cards);
       //console.log('🎨 Design values:', data.cards.map((c: any) => ({ id: c.id, design: c.selectedDesign })));
       setCardsData(data.cards);
-      toast.success(`Loaded ${data.count} card(s)`);
+      // Removed success toast notification for loaded cards
     } else {
       toast.error(data.error || 'Failed to fetch cards');
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, Users, Mail, Phone, Calendar, ExternalLink } from "lucide-react";
+import { Search, Users, Mail, Phone, Calendar, ExternalLink, MoreHorizontal } from "lucide-react";
 import { toast } from "react-hot-toast";
 import styles from "./contacts.module.css";
 
@@ -38,6 +38,7 @@ export default function ContactsPage() {
   const [contacts, setContacts] = useState<ContactConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // Fetch contacts from API
   useEffect(() => {
@@ -53,8 +54,23 @@ export default function ContactsPage() {
         }
 
         const data = await response.json();
-        setContacts(data.contacts || []);
+        const list = data.contacts || [];
+        setContacts(list);
+        // mark as seen on visit
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('contacts-last-seen-count', String(list.length || 0));
+            window.dispatchEvent(new Event('contacts-seen'));
+          }
+        } catch (_) {
+          // ignore
+        }
         if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem('dashboard-contacts-last-opened', new Date().toISOString());
+          } catch {
+            // ignore
+          }
           window.dispatchEvent(new Event('contacts-updated'));
         }
       } catch (error: any) {
@@ -95,6 +111,29 @@ export default function ContactsPage() {
     window.open(sourceUrl, '_blank');
   };
 
+  const handleDeleteContact = async (id: string) => {
+    try {
+      const res = await fetch(`/api/contacts/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Failed to delete contact');
+      }
+
+      setContacts(prev => prev.filter(c => c.id !== id));
+      toast.success('Contact deleted successfully');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('contacts-updated'));
+      }
+    } catch (error: any) {
+      console.error('Error deleting contact:', error);
+      toast.error(error?.message || 'Failed to delete contact');
+    }
+  };
+
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -103,36 +142,54 @@ export default function ContactsPage() {
           <div className={styles.titleSection}>
             <h1 className={styles.title}>
               {/* <Users className={styles.titleIcon} /> */}
-              My Contacts
+              Lead
             </h1>
             <p className={styles.subtitle}>
-              People who connected with your cards
+             People who reached out using your MyKard link.
             </p>
-          </div>
-          <div className={styles.statsSection}>
-            <div className={styles.statCard}>
-              <span className={styles.statNumber}>{contacts.length}</span>
-              <span className={styles.statLabel}>Total Contacts</span>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Search Bar */}
       <div className={styles.searchSection}>
-        <div className={styles.searchContainer}>
-          <Search className={styles.searchIcon} />
+        <div className={styles.searchRow}>
+          <div className={styles.searchContainer}>
+            <Search className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder={`Search ${contacts.length} contact${contacts.length !== 1 ? 's' : ''}`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={styles.searchInput}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className={styles.clearButton}
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Inline Search Bar */}
+      <div className={styles.desktopSearchBar}>
+        <div className={styles.desktopSearchContainer}>
+          <Search className={styles.desktopSearchIcon} />
           <input
             type="text"
-            placeholder="Search contacts by name, email, phone, or card..."
+            placeholder={`Search ${contacts.length} contact${contacts.length !== 1 ? 's' : ''}`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
+            className={styles.desktopSearchInput}
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
-              className={styles.clearButton}
+              className={styles.desktopClearButton}
             >
               ×
             </button>
@@ -200,6 +257,25 @@ export default function ContactsPage() {
                           <Calendar size={14} />
                           {formatRelativeTime(contact.createdAt)}
                         </span>
+                        <div className={styles.dropdownContainer}>
+                          <button
+                            onClick={() => setOpenDropdown(openDropdown === contact.id ? null : contact.id)}
+                            className={styles.moreButton}
+                            title="More options"
+                          >
+                            <MoreHorizontal size={16} />
+                          </button>
+                          {openDropdown === contact.id && (
+                            <div className={styles.dropdownMenu}>
+                              <button 
+                                onClick={() => handleDeleteContact(contact.id)}
+                                className={styles.dropdownItemDelete}
+                              >
+                                Delete Contact
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -237,6 +313,10 @@ export default function ContactsPage() {
                           )}
                         </span>
                       </p>
+                      <div className={styles.mobileTimeStamp}>
+                        <Calendar size={14} />
+                        {formatRelativeTime(contact.createdAt)}
+                      </div>
                     </div>
                   </div>
                 ))}

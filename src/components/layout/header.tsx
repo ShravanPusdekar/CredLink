@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { ChevronDown, User, LogOut, Menu, Bell } from "lucide-react"; // ✅ Added Menu icon for hamburger
+import { ChevronDown, User, LogOut, Menu, Bell, HelpCircle } from "lucide-react"; // ✅ Added Menu icon for hamburger
+
 import { useAuth } from "@/lib/hooks/use-auth";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +17,19 @@ export function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLgUp, setIsLgUp] = useState(false); // ✅ detect screen size
   const [activeCardName, setActiveCardName] = useState<string>("");
+
+  const getInitials = (value?: string | null) => {
+    if (!value) return "U";
+    const base = value.includes("@") ? value.split("@")[0] : value;
+    const letters = base
+      .split(" ")
+      .filter(Boolean)
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+    return letters || "U";
+  };
 
   // ✅ Detect large screen
   useEffect(() => {
@@ -96,35 +111,34 @@ export function Header() {
   return (
     <>
       {/* HEADER WRAPPER */}
-      <header className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-50">
+      <header
+        className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-50"
+        style={!isLgUp ? { paddingTop: "4px" } : undefined}
+      >
         <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center h-16 px-4 relative">
-
-    {/* LEFT AREA — Hamburger goes here only on mobile */}
-    <div className="flex items-center">
-      {!isLgUp && (
-        <motion.button
-          onClick={() => window.dispatchEvent(new Event("toggle-sidebar"))}
-          whileTap={{ scale: 0.9 }}
-          style={{
-            width: "42px",
-            height: "42px",
-            borderRadius: "10px",
-            background: "linear-gradient(to right, #1e40af, #2563eb)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            border: "none",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.15)",
-            marginLeft: "17px",   // <-- light spacing ONLY on mobile
-          }}
+        <div
+          className="flex justify-between items-center h-14 px-4 relative"
         >
-          <Menu size={20} />
-        </motion.button>
-      )}
-    </div>
-            {/* RIGHT SIDE - Card Name & Profile */}
+
+  {/* LEFT AREA — Hamburger goes here only on mobile */}
+  <div
+    className="flex items-center"
+    style={!isLgUp ? { paddingLeft: "10px" } : undefined}
+  >
+    {!isLgUp && (
+      <Link href="/dashboard">
+        <Image
+          src="/assets/headerlogo.png"
+          alt="Logo"
+          width={120}
+          height={32}
+          className="h-8 w-auto object-contain"
+        />
+      </Link>
+    )}
+  </div>
+
+            {/* RIGHT SIDE - Notifications & Profile */}
             <div
               style={{
                 display: "flex",
@@ -134,6 +148,14 @@ export function Header() {
                 paddingRight: "32px",
               }}
             >
+              {/* Notifications icon in header (desktop & mobile) */}
+              <Link
+                href="/dashboard/notifications"
+                className="relative flex items-center justify-center"
+              >
+                <Bell className="w-5 h-5 text-gray-500 hover:text-blue-600 transition-colors" />
+              </Link>
+
               <div className="relative" data-profile-menu>
                 {isLgUp ? (
                   <motion.button
@@ -167,7 +189,15 @@ export function Header() {
                         }}
                       />
                     ) : (
-                      <User style={{ width: "16px", height: "16px", color: "white" }} />
+                      <span
+                        style={{
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          color: "#ffffff",
+                        }}
+                      >
+                        {getInitials(user?.fullName || user?.email || "")}
+                      </span>
                     )}
                   </motion.button>
                 ) : (
@@ -179,8 +209,9 @@ export function Header() {
                       width: "44px",
                       height: "44px",
                       borderRadius: "9999px",
-                      background:
-                        "radial-gradient(120% 120% at 30% 20%, #60a5fa 0%, #2563eb 40%, #1e40af 100%)",
+                      background: user?.profileImage
+                        ? "transparent"
+                        : "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
                       border: "1px solid rgba(147, 197, 253, 0.5)",
                       boxShadow:
                         "0 6px 18px rgba(37, 99, 235, 0.35), inset 0 0 12px rgba(147, 197, 253, 0.35)",
@@ -192,10 +223,31 @@ export function Header() {
                     }}
                     aria-label="Open profile menu"
                   >
-                    <User style={{ width: "18px", height: "18px", color: "#ffffff" }} />
+                    {user?.profileImage ? (
+                      <img
+                        src={user.profileImage}
+                        alt="Profile"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: "9999px",
+                        }}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 600,
+                          color: "#ffffff",
+                        }}
+                      >
+                        {getInitials(user?.fullName || user?.email || "")}
+                      </span>
+                    )}
                   </motion.button>
                 )}
-                {/* DROPDOWN MENU - use same style on all screen sizes so it works reliably on mobile */}
+                {/* DROPDOWN MENU - shows Help & Support, Account, Logout on all screen sizes */}
                 <AnimatePresence>
                   {isDropdownOpen && (
                     <motion.div
@@ -221,7 +273,7 @@ export function Header() {
                       }}
                     >
                       <Link
-                        href="/dashboard/notifications"
+                        href="/dashboard/support"
                         onClick={() => setIsDropdownOpen(false)}
                         style={{
                           display: "flex",
@@ -244,8 +296,8 @@ export function Header() {
                           e.currentTarget.style.color = "#374151";
                         }}
                       >
-                        <Bell style={{ width: "16px", height: "16px" }} />
-                        <span>Notifications</span>
+                        <HelpCircle style={{ width: "16px", height: "16px" }} />
+                        <span>Help & Support</span>
                       </Link>
                       <Link
                         href="/dashboard/settings"
