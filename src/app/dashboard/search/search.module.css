@@ -304,6 +304,10 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 768px) {
+  .container {
+    padding: 40px 1rem;
+  }
+
   .filterGrid {
     grid-template-columns: 1fr;
   }
@@ -318,5 +322,11 @@
 
   .searchBar {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 40px 0.75rem;
   }
 }
