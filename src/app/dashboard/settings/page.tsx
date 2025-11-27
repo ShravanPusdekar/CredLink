@@ -14,7 +14,6 @@ import "./account-settings.css";
  * - All styles moved to account-settings.css
  * - Duplicate Account Photo section removed
  */
-
 /* ---------- helpers ---------- */
 function useWindowWidth(breakpoint = 760) {
   const [width, setWidth] = useState<number>(1200);
@@ -30,7 +29,7 @@ function useWindowWidth(breakpoint = 760) {
   }, []);
   
   return { width, isMobile: isMounted ? width <= breakpoint : false };
-}
+} // Added closing brace here
 
 /* ---------- main component ---------- */
 export default function AccountSettingsPage(): React.JSX.Element {
@@ -41,36 +40,38 @@ export default function AccountSettingsPage(): React.JSX.Element {
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [userLocation, setUserLocation] = useState<string>("");
-  
-  // Fetch user data on component mount
+  const [company, setCompany] = useState<string>("");
+  const [title, setTitle] = useState<string>("");
+
+  // Fetch basic user data on mount (name/email)
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch('/api/user/me', {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
           },
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch user data');
         }
-        
+
         const userData = await response.json();
         setName(userData.name || userData.email.split('@')[0]);
         setEmail(userData.email || '');
       } catch (error) {
         console.error('Error fetching user data:', error);
-        // Fallback to empty strings if there's an error
         setName('');
         setEmail('');
       }
     };
-    
+
     fetchUserData();
   }, []);
 
+  // password / phone / flags
   const [password, setPassword] = useState<string>("**********");
   const [currentPassword, setCurrentPassword] = useState<string>("");
   const [newPassword, setNewPassword] = useState<string>("");
@@ -94,21 +95,18 @@ export default function AccountSettingsPage(): React.JSX.Element {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState<boolean>(false);
   const [showPasswordSuccessModal, setShowPasswordSuccessModal] = useState<boolean>(false);
   const [showDeactivateSuccessModal, setShowDeactivateSuccessModal] = useState<boolean>(false);
-  const [deactivateErrorMessage, setDeactivateErrorMessage] = useState<string>('');
+  const [deactivateErrorMessage, setDeactivateErrorMessage] = useState<string>("");
   const [showDeactivateErrorModal, setShowDeactivateErrorModal] = useState<boolean>(false);
-
 
   // photo change: preview + upload
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // immediate preview
     const reader = new FileReader();
     reader.onload = () => setAccountPhoto(reader.result as string);
     reader.readAsDataURL(file);
 
-    // upload to backend (Cloudinary handler)
     try {
       const fd = new FormData();
       fd.append("image", file);
@@ -136,9 +134,32 @@ export default function AccountSettingsPage(): React.JSX.Element {
     }
   };
 
-  const handleRemovePhoto = () => {
-    setAccountPhoto(null);
-    toast.success("Profile photo removed from UI.");
+  // remove profile photo: clear from DB and UI
+  const handleRemovePhoto = async () => {
+    try {
+      const res = await fetch("/api/profile/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ profileImage: null }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({}));
+        console.error("Failed to remove profile image:", error);
+        toast.error("Failed to remove profile photo. Please try again.");
+        return;
+      }
+
+      setAccountPhoto(null);
+      toast.success("Profile photo removed.");
+      setTimeout(() => {
+        checkAuth();
+      }, 300);
+    } catch (err) {
+      console.error("Error removing profile image:", err);
+      toast.error("Failed to remove profile photo. Please try again.");
+    }
   };
 
   // responsive
@@ -159,6 +180,8 @@ export default function AccountSettingsPage(): React.JSX.Element {
         setEmail(user.email ?? "");
         setPhoneNumber(user.phone ?? "");
         setUserLocation(user.location ?? "");
+        setCompany(user.company ?? "");
+        setTitle(user.title ?? "");
         setAccountPhoto(user.profileImage ?? null);
         setHasPassword(user.hasPassword ?? true);
       } catch (err) {
@@ -199,8 +222,8 @@ export default function AccountSettingsPage(): React.JSX.Element {
       return;
     }
 
-    const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-    if (!phoneRegex.test(tempPhoneNumber.replace(/\s/g, ''))) {
+    const phoneRegex = /^[+]?[1-9][\d]{0,15}$/;
+    if (!phoneRegex.test(tempPhoneNumber.replace(/\s/g, ""))) {
       toast.error("Please enter a valid phone number");
       return;
     }
@@ -210,7 +233,7 @@ export default function AccountSettingsPage(): React.JSX.Element {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ phone: tempPhoneNumber })
+        body: JSON.stringify({ phone: tempPhoneNumber }),
       });
 
       if (res.ok) {
@@ -234,19 +257,19 @@ export default function AccountSettingsPage(): React.JSX.Element {
 
   const handleDeactivateAccount = async () => {
     try {
-      const response = await fetch('/api/auth/deactivate-account', {
-        method: 'POST',
+      const response = await fetch("/api/auth/deactivate-account", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({}),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setDeactivateErrorMessage(data.error || 'Failed to deactivate account');
+        setDeactivateErrorMessage(data.error || "Failed to deactivate account");
         setShowDeactivateErrorModal(true);
         setShowDeactivateConfirm(false);
         return;
@@ -254,13 +277,13 @@ export default function AccountSettingsPage(): React.JSX.Element {
 
       setShowDeactivateConfirm(false);
       setShowDeactivateSuccessModal(true);
-      
+
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = "/";
       }, 2000);
     } catch (error) {
-      console.error('Deactivate account error:', error);
-      setDeactivateErrorMessage('Failed to deactivate account. Please try again.');
+      console.error("Deactivate account error:", error);
+      setDeactivateErrorMessage("Failed to deactivate account. Please try again.");
       setShowDeactivateErrorModal(true);
       setShowDeactivateConfirm(false);
     }
@@ -268,92 +291,145 @@ export default function AccountSettingsPage(): React.JSX.Element {
 
   const updateNameInDatabase = async (newName: string) => {
     try {
-      const response = await fetch('/api/profile', {
-        method: 'PUT',
+      const response = await fetch("/api/profile", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({ fullName: newName }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error("Name update failed:", error);
+        return false;
+      }
+      setTimeout(() => {
+        checkAuth();
+      }, 200);
+      return true;
+    } catch (err) {
+      console.error("Name update error:", err);
+      return false;
+    }
+  };
+
+  const updateCompanyInDatabase = async (newCompany: string) => {
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ company: newCompany }),
       });
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        console.error('Name update failed:', error);
+        console.error("Company update failed:", error);
         return false;
       }
-      setTimeout(() => { checkAuth(); }, 200);
+      setTimeout(() => {
+        checkAuth();
+      }, 200);
       return true;
     } catch (err) {
-      console.error('Name update error:', err);
+      console.error("Company update error:", err);
+      return false;
+    }
+  };
+
+  const updateTitleInDatabase = async (newTitle: string) => {
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ title: newTitle }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error("Title update failed:", error);
+        return false;
+      }
+      setTimeout(() => {
+        checkAuth();
+      }, 200);
+      return true;
+    } catch (err) {
+      console.error("Title update error:", err);
+      return false;
+    }
+  };
+
+  const updateLocationInDatabase = async (newLocation: string) => {
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ location: newLocation }),
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error("Location update failed:", error);
+        return false;
+      }
+      setTimeout(() => {
+        checkAuth();
+      }, 200);
+      return true;
+    } catch (err) {
+      console.error("Location update error:", err);
       return false;
     }
   };
 
   const changePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('Please fill all password fields');
+      toast.error("Please fill all password fields");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error('New password and confirm password do not match');
+      toast.error("New password and confirm password do not match");
       return;
     }
     try {
-      const res = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
       });
       const data = await res.json().catch(() => ({}));
-      
+
       if (res.status === 200) {
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
         setShowPasswordSuccessModal(true);
       } else if (res.status === 400) {
-        toast.error('Invalid input or password mismatch');
+        toast.error("Invalid input or password mismatch");
       } else if (res.status === 401) {
-        toast.error('Current password is incorrect');
+        toast.error("Current password is incorrect");
       } else if (res.status === 500) {
-        toast.error('Something went wrong, please try again later');
+        toast.error("Something went wrong, please try again later");
       } else {
-        toast.error((data as any).error || 'Failed to change password');
+        toast.error((data as any).error || "Failed to change password");
       }
     } catch (e) {
-      console.error('Change password error:', e);
-      toast.error('Something went wrong, please try again later');
+      console.error("Change password error:", e);
+      toast.error("Something went wrong, please try again later");
     }
   };
 
   return (
     <div className="account-settings-page">
-      {/* HERO */}
-      <section className="hero-section">
-        <div className={`hero-inner ${isMobile ? 'mobile' : ''}`}>
-          <div className="hero-text">
-            <h1 className={`hero-title ${isMobile ? 'mobile' : 'desktop'}`}>
-              Account <span className="hero-title-accent">Settings</span>
-            </h1>
-            <p className="hero-lead">Update your profile, security settings and preferences.</p>
-          </div>
-
-          {/* Save Changes Button - Top Right */}
-          <button
-            className={`btn-primary ${isMobile ? 'mobile' : 'desktop'}`}
-            onClick={() => {
-              setPopupMessage('All changes saved');
-              setIsPopupOpen(true);
-            }}
-            suppressHydrationWarning
-          >
-            Save Changes
-          </button>
-        </div>
-      </section>
-
-      {/* MAIN */}
       <main className={`settings-container ${isMobile ? 'mobile' : ''}`}>
         {/* Profile overview card */}
         <section aria-labelledby="profile-heading" className="settings-card profile-card">
@@ -363,7 +439,21 @@ export default function AccountSettingsPage(): React.JSX.Element {
                 {accountPhoto ? (
                   <img src={accountPhoto} alt="profile" className="avatar-img" />
                 ) : (
-                  <div className="avatar-placeholder">{name?.charAt(0)?.toUpperCase() ?? "U"}</div>
+                  <div className="avatar-placeholder">
+                    {(() => {
+                      const value = name || email || "U";
+                      const base = value.includes("@") ? value.split("@")[0] : value;
+                      return (
+                        base
+                          .split(" ")
+                          .filter(Boolean)
+                          .map((part: string) => part[0])
+                          .join("")
+                          .toUpperCase()
+                          .slice(0, 2) || "U"
+                      );
+                    })()}
+                  </div>
                 )}
 
                 <label className="upload-label">
@@ -422,11 +512,51 @@ export default function AccountSettingsPage(): React.JSX.Element {
             </div>
           </div>
 
+          {/* Title row */}
+          <div className={`form-row ${isMobile ? 'mobile' : ''}`}>
+            <label className={`form-label ${isMobile ? 'mobile' : ''}`}>Title</label>
+            <div className={`form-control ${isMobile ? 'mobile' : ''}`}>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onFocus={() => setFocusedInput("title")}
+                onBlur={() => { setFocusedInput(null); updateTitleInDatabase(title); }}
+                className={`form-input ${isMobile ? 'mobile' : ''}`}
+                aria-label="Title"
+                suppressHydrationWarning
+              />
+            </div>
+          </div>
+
+          {/* Company row */}
+          <div className={`form-row ${isMobile ? 'mobile' : ''}`}>
+            <label className={`form-label ${isMobile ? 'mobile' : ''}`}>Company</label>
+            <div className={`form-control ${isMobile ? 'mobile' : ''}`}>
+              <input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                onFocus={() => setFocusedInput("company")}
+                onBlur={() => { setFocusedInput(null); updateCompanyInDatabase(company); }}
+                className={`form-input ${isMobile ? 'mobile' : ''}`}
+                aria-label="Company"
+                suppressHydrationWarning
+              />
+            </div>
+          </div>
+
           {/* Location row */}
           <div className={`form-row ${isMobile ? 'mobile' : ''}`}>
             <label className={`form-label ${isMobile ? 'mobile' : ''}`}>Location</label>
             <div className={`form-control ${isMobile ? 'mobile' : ''}`}>
-              <div className="input-static">{userLocation || "Not provided"}</div>
+              <input
+                value={userLocation}
+                onChange={(e) => setUserLocation(e.target.value)}
+                onFocus={() => setFocusedInput("location")}
+                onBlur={() => { setFocusedInput(null); updateLocationInDatabase(userLocation); }}
+                className={`form-input ${isMobile ? 'mobile' : ''}`}
+                aria-label="Location"
+                suppressHydrationWarning
+              />
             </div>
           </div>
 
