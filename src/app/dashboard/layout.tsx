@@ -46,8 +46,12 @@ export default function DashboardLayout({
   }, []);
 
   const isCreateOrEditPage = pathname === "/dashboard/create" || pathname === "/dashboard/edit";
-  const mainStyle: React.CSSProperties = isCreateOrEditPage && isMobile
-    ? {}
+  const isContactsPage = pathname === "/dashboard/contacts";
+  const isSearchPage = pathname === "/dashboard/search";
+
+  const shouldSkipPadding = isMobile && (isCreateOrEditPage || isContactsPage || isSearchPage);
+  const mainStyle: React.CSSProperties = shouldSkipPadding
+    ? { background: "transparent" }
     : {
         padding: "24px",
         background: "transparent",

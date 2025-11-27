@@ -185,7 +185,7 @@ function SearchPageContent() {
         .wrap { position: relative; z-index: 10; max-width: 1200px; margin: 18px auto; padding: 28px; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; }
         .header { display:flex; flex-direction: column; align-items:center; gap:8px; text-align:center; margin-bottom: 12px; }
         .title { font-size:28px; font-weight:700; color:#111827; line-height:1.05; margin:0; text-align:center; }
-        .subtitle { color:#4B5563; font-size:16px; line-height:1.5; max-width: 600px; margin: 0 auto; }
+        .subtitle { color:#9ca3af; font-size:14px; line-height:1.4; max-width: 600px; margin: 0 auto; letter-spacing: 0.3px; }
         .search-panel { margin-top:18px; background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); border-radius:14px; padding:14px; border:1px solid rgba(0,0,0,0.04); box-shadow: 0 10px 30px rgba(2,6,23,0.08); overflow: visible; }
 
         .left { flex:1; position:relative; }
@@ -201,20 +201,29 @@ function SearchPageContent() {
         .card { border-radius:12px; padding:12px; background:#fff; border:1px solid rgba(0,0,0,0.04); box-shadow:0 8px 28px rgba(2,6,23,0.06); display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:92px; }
         .avatar { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:22px; color:#fff; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 6px 18px rgba(99,102,241,0.08); overflow:hidden; }
         .name { font-weight:700; font-size:16px; color:#0F172A; margin:0; }
-        .city { font-size:12px; color:#94A3B8; margin-top:6px; }
+        .designation { font-size:13px; color:#64748B; margin:2px 0; }
+        .company { font-size:13px; color:#94A3B8; margin:1px 0; }
+        .city { font-size:13px; color:#94A3B8; margin-top:4px; }
 
         .connect { padding:10px 14px; border-radius:12px; font-weight:600; font-size:13px; border:none; cursor:pointer; background: var(--gradient-primary); color:#071A52; box-shadow:0 8px 26px rgba(99,102,241,0.08); }
 
         /* responsive: small screens (mobile phones) */
         @media (max-width: 720px) {
-          .wrap { padding: 6px 4px; }
+          .wrap { padding: 2px 1rem; padding-bottom: 80px; }
+          .header { gap: 2px; margin-bottom: 8px; }
           .title { font-size:24px; }
-          .left input { padding: 12px 16px 12px 44px; font-size:14px; }
+          .left input { padding: 12px 16px 12px 44px; font-size:14px; margin-top: 2px; }
           .left input::placeholder { font-size:13px; }
           .meta { text-align:center; }
-          .grid { grid-template-columns: 1fr; }
-          .card { align-items:flex-start; gap:10px; }
-          .avatar { width:56px; height:56px; font-size:20px; }
+          .grid { grid-template-columns: 1fr; gap: 8px; }
+          .card { align-items:flex-start; gap:8px; min-height: 80px; padding: 8px; }
+          .avatar { width:48px; height:48px; font-size:18px; }
+        }
+
+        @media (max-width: 480px) {
+          .wrap { padding: 2px 0.75rem; padding-bottom: 80px; }
+          .card { min-height: 75px; padding: 6px; gap: 6px; }
+          .avatar { width:44px; height:44px; font-size:16px; }
         }
 
         /* medium screens */
@@ -273,7 +282,9 @@ function SearchPageContent() {
 
                   <div style={{ minWidth: 0 }}>
                     <div className="name">{p.name}</div>
-                    <div className="city">📍 {p.city}</div>
+                    {p.designation && <div className="designation">{p.designation}</div>}
+                    {p.company && <div className="company">{p.company}</div>}
+                    <div className="city">{p.city}</div>
                   </div>
                 </div>
 
