@@ -81,8 +81,8 @@ export default function AccountSettingsPage(): React.JSX.Element {
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [phoneNumber, setPhoneNumber] = useState<string>("");
-  const [isPhoneVerified, setIsPhoneVerified] = useState<boolean>(false);
-  const [showOtpModal, setShowOtpModal] = useState<boolean>(false);
+  //const [isPhoneVerified, setIsPhoneVerified] = useState<boolean>(false);
+ // const [showOtpModal, setShowOtpModal] = useState<boolean>(false);
   const [isEditingPhone, setIsEditingPhone] = useState<boolean>(false);
   const [tempPhoneNumber, setTempPhoneNumber] = useState<string>("");
   const [hasPassword, setHasPassword] = useState<boolean>(true);
@@ -192,7 +192,7 @@ export default function AccountSettingsPage(): React.JSX.Element {
   }, []);
 
   // Send OTP function
-  const handleSendOTP = () => {
+ {/* const handleSendOTP = () => {
     toast.success("OTP sent to " + phoneNumber);
     setShowOtpModal(true);
   };
@@ -208,7 +208,7 @@ export default function AccountSettingsPage(): React.JSX.Element {
       toast.error("Wrong OTP entered. Please try again.");
     }, 1000);
   };
-
+*/}
   // Handle phone number editing
   const handleEditPhone = () => {
     setTempPhoneNumber(phoneNumber);
@@ -239,7 +239,7 @@ export default function AccountSettingsPage(): React.JSX.Element {
       if (res.ok) {
         setPhoneNumber(tempPhoneNumber);
         setIsEditingPhone(false);
-        setIsPhoneVerified(false);
+        // setIsPhoneVerified(false);
         toast.success("Phone number updated successfully");
       } else {
         toast.error("Failed to update phone number");
@@ -623,7 +623,7 @@ return (
                     {phoneNumber ? (
                       <div className="input-static" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <span>{phoneNumber}</span>
-                        {isPhoneVerified ? (
+                     {/*   {isPhoneVerified ? (
                           <div className="phone-status-verified">
                             <FaCheckCircle style={{ fontSize: "12px" }} />
                             Verified
@@ -637,7 +637,12 @@ return (
                               Edit
                             </button>
                           </>
-                        )}
+                        )} */}
+                        {/* OTP verification temporarily disabled */}
+<button onClick={handleEditPhone} className="phone-edit-btn">
+  Edit
+</button>
+
                       </div>
                     ) : (
                       <div className="input-static" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -648,11 +653,11 @@ return (
                       </div>
                     )}
 
-                    {phoneNumber && !isPhoneVerified && (
+                 {/*   {phoneNumber && !isPhoneVerified && (
                       <button onClick={handleSendOTP} className="send-otp-btn">
                         Send OTP
                       </button>
-                    )}
+                    )} */} 
                   </>
                 )}
               </div>
@@ -890,14 +895,14 @@ return (
       )}
 
       {/* OTP Verification Modal */}
-      {showOtpModal && (
+     {/*  {showOtpModal && (
         <OTPModal
           phoneNumber={phoneNumber}
           onClose={() => setShowOtpModal(false)}
           onVerify={handleVerifyOTP}
         />
       )}
-
+*/}
       {savePopup && (
  <div
   style={{
