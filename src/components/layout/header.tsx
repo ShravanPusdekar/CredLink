@@ -112,8 +112,7 @@ export function Header() {
     <>
       {/* HEADER WRAPPER */}
       <header
-        className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-50"
-        style={!isLgUp ? { paddingTop: "4px" } : undefined}
+        className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200/50"
       >
         <div className="max-w-7xl mx-auto">
         <div
