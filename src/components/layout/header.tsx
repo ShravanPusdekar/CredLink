@@ -16,6 +16,8 @@ export function Header() {
   const { user, isAuthenticated, checkAuth, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLgUp, setIsLgUp] = useState(false);
+  const [notificationsCount, setNotificationsCount] = useState(0);
+
   const [activeCardName, setActiveCardName] = useState<string>("");
 
   const getInitials = (value?: string | null) => {
@@ -39,6 +41,49 @@ export function Header() {
     mql.addEventListener("change", onChange);
     return () => mql.removeEventListener("change", onChange);
   }, []);
+
+  useEffect(() => {
+  let intervalId: any;
+
+  const computeCount = (list: any[]) => {
+    let cleared: string[] = [];
+    try {
+      const stored = localStorage.getItem("dashboard-cleared-notifications");
+      if (stored) cleared = JSON.parse(stored);
+    } catch {
+      cleared = [];
+    }
+
+    const clearedSet = new Set(cleared || []);
+    return list.filter((n: any) => !clearedSet.has(n.id)).length;
+  };
+
+  const fetchNotifications = async () => {
+    if (document.visibilityState !== "visible") return;
+
+    try {
+      const res = await fetch("/api/notifications", { credentials: "include" });
+      if (!res.ok) return;
+
+      const data = await res.json();
+      const list = Array.isArray(data.notifications) ? data.notifications : [];
+      const unreadTotal = computeCount(list);
+      setNotificationsCount(unreadTotal);
+    } catch (_) {}
+  };
+
+  fetchNotifications(); // immediate load
+  intervalId = setInterval(fetchNotifications, 60000);
+
+  // listen for update events
+  const onUpdated = () => fetchNotifications();
+  window.addEventListener("notifications-updated", onUpdated);
+
+  return () => {
+    clearInterval(intervalId);
+    window.removeEventListener("notifications-updated", onUpdated);
+  };
+}, []);
 
 
   useEffect(() => {
@@ -109,26 +154,40 @@ export function Header() {
     <>
       {/* HEADER WRAPPER */}
       <header
-        className="bg-white/95 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-50"
+        className="
+          bg-white/95 backdrop-blur-sm shadow-sm 
+          border-b border-gray-200/50 
+          sticky top-0 z-50
+        "
       >
         <div className="max-w-7xl mx-auto">
           <div
-            className="flex justify-between items-center h-13 sm:h-12 lg:h-14 px-3 sm:px-4 relative"
+            className="
+              flex justify-between items-center 
+              h-13 sm:h-12 lg:h-14 
+              px-3 sm:px-4 
+              relative
+            "
           >
             {/* LEFT AREA */}
-            <div className="flex items-center">
-              {!isLgUp && (
-                <Link href="/dashboard">
-                  <Image
-                    src="/assets/headerlogo.png"
-                    alt="Logo"
-                    width={120}
-                    height={32}
-                    className="h-8 w-auto object-contain"
-                  />
-                </Link>
-              )}
-            </div>
+           <div className="flex items-center">
+  
+  {/* Invisible spacer for mobile left padding */}
+  {!isLgUp && <div className="w-4" />} 
+  {/* w-4 = 16px; increase to w-6 (24px) if you want more */}
+
+  {!isLgUp && (
+    <Link href="/dashboard">
+      <Image
+        src="/assets/headerlogo.png"
+        alt="Logo"
+        width={120}
+        height={32}
+        className="h-8 w-auto object-contain"
+      />
+    </Link>
+  )}
+</div>
 
             {/* RIGHT SIDE */}
             <div
@@ -140,13 +199,19 @@ export function Header() {
                 paddingRight: "32px",
               }}
             >
+<Link
+  href="/dashboard/notifications"
+  className="relative flex items-center justify-center"
+>
+  <Bell className="w-5 h-5 text-gray-500 hover:text-blue-600 transition-colors" />
 
-              <Link
-                href="/dashboard/notifications"
-                className="relative flex items-center justify-center"
-              >
-                <Bell className="w-5 h-5 text-gray-500 hover:text-blue-600 transition-colors" />
-              </Link>
+  {notificationsCount > 0 && (
+    <span
+      className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full"
+    ></span>
+  )}
+</Link>
+
 
               <div className="relative" data-profile-menu>
                 {isLgUp ? (
