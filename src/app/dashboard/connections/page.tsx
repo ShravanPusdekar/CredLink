@@ -1295,13 +1295,24 @@ export default function DashboardContactPage() {
                     <div key={request.id} className={styles.requestCard}>
                       <div className={styles.requestUserInfo}>
                         <div className={styles.requestAvatar}>
-                          {getInitials(request.name)}
+                          {request.avatar ? (
+                            <img
+                              src={request.avatar}
+                              alt={request.name}
+                              className={styles.avatarImage}
+                            />
+                          ) : (
+                            <span className={styles.avatarText}>
+                              {getInitials(request.name)}
+                            </span>
+                          )}
                         </div>
                         <div>
                           <h4 className={styles.requestName}>{request.name}</h4>
                           <p className={styles.requestDetails}>{request.title} at {request.company}</p>
                         </div>
                       </div>
+
                       <div className={styles.requestActions}>
                         <button 
                           onClick={() => openApproveModal(request)}
