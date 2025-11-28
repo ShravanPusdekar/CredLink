@@ -84,24 +84,7 @@ const DigitalCardPreview: React.FC<DigitalCardProps> = ({
   const [activePanel, setActivePanel] = useState<Section | null>(null);
 
   const openPortfolio = () => {
-    const val = (portfolio || '').trim();
-    if (!val) {
-      setActivePanel('Portfolio');
-      return;
-    }
-
-    const items = val.split(',').map((s) => s.trim()).filter(Boolean);
-
-    // If there are multiple portfolio entries, show the panel so each is clickable
-    if (items.length !== 1) {
-      setActivePanel('Portfolio');
-      return;
-    }
-
-    const target = items[0];
-    const hasProto = /^https?:\/\//i.test(target);
-    const url = hasProto ? target : `https://${target}`;
-    if (typeof window !== 'undefined') window.open(url, '_blank', 'noopener');
+    setActivePanel('Portfolio');
   };
 
   return (
