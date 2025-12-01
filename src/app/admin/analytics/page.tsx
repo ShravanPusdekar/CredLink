@@ -442,6 +442,16 @@ export default function AnalyticsPage() {
     updatePeriodCount();
   }, [filters.usersPeriod]);
 
+  const toggleRowExpansion = (rowIndex: number) => {
+    const newExpandedRows = new Set(expandedRows);
+    if (newExpandedRows.has(rowIndex)) {
+      newExpandedRows.delete(rowIndex);
+    } else {
+      newExpandedRows.add(rowIndex);
+    }
+    setExpandedRows(newExpandedRows);
+  };
+
   // Fetch dynamic cities & categories once
   useEffect(() => {
     const fetchMeta = async () => {
@@ -795,7 +805,7 @@ export default function AnalyticsPage() {
                       <span className="text-xs text-gray-400">No users match filters</span>
                     ) : (
                       <div className="flex flex-wrap gap-1">
-                        {visibleUsers.map((user: any, idx: number) => (
+                        {(expandedRows.has(i) ? users : users.slice(0, 2)).map((user: any, idx: number) => (
                           <div key={idx} className="inline-block bg-blue-50 border border-blue-200 text-blue-800 text-xs px-2 py-1 rounded-lg">
                             <div className="font-medium">{user.name}</div>
                             <div className="text-xs text-blue-600 mt-1">
@@ -806,28 +816,10 @@ export default function AnalyticsPage() {
                         ))}
                         {remaining > 0 && (
                           <button
-                            type="button"
-                            className="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full hover:bg-orange-200"
-                            onClick={() => {
-                              const next = new Set(expandedRows);
-                              next.add(i);
-                              setExpandedRows(next);
-                            }}
+                            onClick={() => toggleRowExpansion(i)}
+                            className="inline-block bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full hover:bg-orange-200 cursor-pointer transition-colors"
                           >
-                            +{remaining} Others
-                          </button>
-                        )}
-                        {isExpanded && users.length > 2 && (
-                          <button
-                            type="button"
-                            className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full hover:bg-gray-200"
-                            onClick={() => {
-                              const next = new Set(expandedRows);
-                              next.delete(i);
-                              setExpandedRows(next);
-                            }}
-                          >
-                            Show Less
+                            {expandedRows.has(i) ? `Show Less` : `+${remaining} Others`}
                           </button>
                         )}
                       </div>
