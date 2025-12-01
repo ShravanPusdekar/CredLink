@@ -1,5 +1,5 @@
 .analyticsContainer {
-  padding: 3rem;
+  padding: 3rem 3rem 0;
   background: linear-gradient(145deg, #f8faff 0%, #eef3ff 100%);
   min-height: 100vh;
   font-family: "Poppins", sans-serif;
@@ -12,6 +12,8 @@
   align-items: center;
   flex-wrap: wrap;
   margin-bottom: 2.5rem;
+  padding-top: 1rem;
+  min-height: 120px;
 }
 
 .title {
