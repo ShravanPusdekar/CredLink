@@ -94,7 +94,7 @@ export default function Header() {
           overflow: 'visible'
         }}
       >
-      <nav className="max-w-7xl mx-auto px-6 pt-3 pb-1" style={{ paddingLeft: '1.25rem', paddingRight: '1.25rem', paddingTop: '0.25rem' }}>
+      <nav className="max-w-7xl mx-auto px-6 pt-3 pb-0" style={{ paddingLeft: '1.25rem', paddingRight: '1.25rem', paddingTop: '0.25rem' }}>
         <div className="flex items-center justify-between h-12">
           {/* Logo - Left Side */}
           <Link href="/" className="flex items-center group">

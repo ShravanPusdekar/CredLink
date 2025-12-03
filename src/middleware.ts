@@ -42,7 +42,7 @@ export function middleware(request: NextRequest) {
     '/faq',
     '/terms',
     '/privacy',
-    '/admin/login',
+    '/secure-entry',
     '/cards/public/*',
     '/api/message/receive',
     '/api/message/send'
@@ -118,8 +118,12 @@ export function middleware(request: NextRequest) {
 
     // Admin routes require admin token
     if (isAdminPath) {
+      // If accessing /admin directly without token, redirect to home instead of login
+      if (!hasAdminToken && path === '/admin') {
+        return NextResponse.redirect(new URL('/', request.url))
+      }
       if (!hasAdminToken) {
-        return NextResponse.redirect(new URL('/admin/login', request.url))
+        return NextResponse.redirect(new URL('/secure-entry', request.url))
       }
       return NextResponse.next({
         request: {

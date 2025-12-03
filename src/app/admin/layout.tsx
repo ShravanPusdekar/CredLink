@@ -84,13 +84,13 @@ useEffect(() => {
     const handleLogout = async () => {
     try {
       await fetch("/api/admin/auth/logout", { method: "POST" });
-      router.push("/admin/login");
+      router.push("/secure-entry");
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
-  if (pathname === "/admin/login") return <>{children}</>;
+  if (pathname === "/secure-entry") return <>{children}</>;
 
   return (
     <div className={styles.adminContainer}>
