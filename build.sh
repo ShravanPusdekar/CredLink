@@ -12,6 +12,6 @@ npx prisma generate
 
 # Build with webpack
 echo "🏗️ Building with webpack..."
-npx next build --webpack
+npx next build
 
 echo "✅ Build complete!"
