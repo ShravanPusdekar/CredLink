@@ -66,6 +66,10 @@ const EditPage = () => {
   const [reviews, setReviews] = useState('');
   // --- END NEW STATE ---
   
+  const [isCustomTitle, setIsCustomTitle] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLargeScreen, setIsLargeScreen] = useState(true);
+
   // Card Type functionality
   const [customTypes, setCustomTypes] = useState<string[]>([]);
   const [showCustomTypeInput, setShowCustomTypeInput] = useState(false);
@@ -123,6 +127,10 @@ const EditPage = () => {
   const [extraFields, setExtraFields] = useState<ExtraField[]>([]);
   // --- END NEW STATE ---
 
+  const [professionalTitles, setProfessionalTitles] = useState<string[]>([]);
+  const [filteredTitles, setFilteredTitles] = useState<string[]>([]);
+  const [titleSearchTerm, setTitleSearchTerm] = useState('');
+
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupMessage, setPopupMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -175,6 +183,85 @@ const EditPage = () => {
       setHexValue2(selectedColor2);
     }
   }, [selectedColor2]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  const handleDropdownToggle = () => {
+    if (!isDropdownOpen) {
+      setTitleSearchTerm('');
+    }
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleTitleSelect = (selectedTitle: string) => {
+    if (selectedTitle === 'CUSTOM') {
+      setIsCustomTitle(true);
+      setTitle('');
+    } else {
+      setIsCustomTitle(false);
+      setTitle(selectedTitle);
+    }
+    setIsDropdownOpen(false);
+  };
+
+  useEffect(() => {
+    const loadProfessions = async () => {
+      try {
+        const response = await fetch('/assets/all_professions.csv');
+        const csvText = await response.text();
+        const professions = csvText
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .sort();
+        setProfessionalTitles([...professions, 'CUSTOM']);
+        setFilteredTitles([...professions, 'CUSTOM']);
+      } catch (error) {
+        console.error('Error loading professions:', error);
+        const fallbackTitles = [
+          'Software Engineer', 'Product Manager', 'UX Designer', 'UI Designer',
+          'Full Stack Developer', 'Frontend Developer', 'Backend Developer',
+          'Mobile Developer', 'Data Scientist', 'Data Analyst', 'Marketing Manager',
+          'Digital Marketer', 'Content Creator', 'Social Media Manager',
+          'Business Analyst', 'Project Manager', 'Consultant', 'Entrepreneur',
+          'Founder', 'CEO', 'CTO', 'CFO', 'COO', 'Sales Manager',
+          'Account Manager', 'HR Manager', 'Recruiter', 'Teacher', 'Professor',
+          'Doctor', 'Lawyer', 'Architect', 'Graphic Designer', 'Photographer',
+          'Videographer', 'Writer', 'Editor', 'Journalist', 'Researcher',
+          'Engineer', 'Manager', 'Director', 'Coordinator', 'Specialist', 'CUSTOM',
+        ];
+        setProfessionalTitles(fallbackTitles);
+        setFilteredTitles(fallbackTitles);
+      }
+    };
+    loadProfessions();
+  }, []);
+
+  useEffect(() => {
+    if (titleSearchTerm.trim() === '') {
+      setFilteredTitles(professionalTitles);
+    } else {
+      const filtered = professionalTitles.filter(option =>
+        option.toLowerCase().includes(titleSearchTerm.toLowerCase())
+      );
+      setFilteredTitles(filtered);
+    }
+  }, [titleSearchTerm, professionalTitles]);
 
   const handleRChange1 = (e: React.ChangeEvent<HTMLInputElement>) => {
     const r = Number(e.target.value);
@@ -998,18 +1085,14 @@ const EditPage = () => {
         return (
           <div>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '20px', color: '#333' }}>Personal</h3>
-            {[
-              { label: 'Full Name', value: firstName, setter: setFirstName },
-              { label: 'Title', value: title, setter: setTitle },
-              { label: 'Company', value: company, setter: setCompany },
-            //  { label: 'Location', value: cardLocation, setter: setCardLocation }
-            ].map(field => (
-              <div key={field.label} style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>{field.label}</label>
+            <div>
+              {/* Full Name Field */}
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>Full Name</label>
                 <input
                   type="text"
-                  value={field.value}
-                  onChange={(e) => field.setter(e.target.value)}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '10px',
@@ -1017,49 +1100,213 @@ const EditPage = () => {
                     border: '1px solid #ddd',
                     borderRadius: '8px',
                     boxSizing: 'border-box',
-                    backgroundColor: field.label === 'Full Name' ? '#f8f8f8' : 'white',
+                    backgroundColor: '#f8f8f8',
                     color: '#555',
-                    outline: 'none'
+                    outline: 'none',
                   }}
                 />
               </div>
-            ))}
-{/* Location Dropdown with Search */}
-<div style={{ marginBottom: '15px' }}>
-  <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>
-    Location
-  </label>
 
-  <LocationSelect
-    value={cardLocation}
-    onChange={(val: string) => setCardLocation(val)}
-    placeholder="Search city…"
-  />
-</div>
+              {/* Title Field with Custom Dropdown (same behavior as edit card page) */}
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>Title</label>
+                <div className="dropdown-container" style={{ position: 'relative' }}>
+                  {!isCustomTitle ? (
+                    <>
+                      <div style={{ position: 'relative' }}>
+                        <input
+                          type="text"
+                          value={title}
+                          onChange={(e) => {
+                            setTitle(e.target.value);
+                            setTitleSearchTerm(e.target.value);
+                          }}
+                          onFocus={handleDropdownToggle}
+                          placeholder="Search or select title..."
+                          style={{
+                            width: '100%',
+                            padding: '10px 30px 10px 10px',
+                            fontSize: '14px',
+                            border: '1px solid #ddd',
+                            borderRadius: '8px',
+                            boxSizing: 'border-box',
+                            backgroundColor: 'white',
+                            color: '#555',
+                            outline: 'none',
+                            cursor: 'pointer',
+                          }}
+                        />
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          style={{
+                            position: 'absolute',
+                            right: '10px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            pointerEvents: 'none',
+                            color: '#6B7280',
+                          }}
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </div>
+                      {isDropdownOpen && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: '0',
+                            right: '0',
+                            backgroundColor: '#ffffff',
+                            border: '2px solid #D1D5DB',
+                            borderTop: 'none',
+                            borderRadius: '0 0 8px 8px',
+                            maxHeight: isLargeScreen ? '200px' : '150px',
+                            overflowY: 'auto',
+                            zIndex: 1000,
+                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                          }}
+                        >
+                          {filteredTitles.map((titleOption, index) => (
+                            <div
+                              key={index}
+                              onClick={() => handleTitleSelect(titleOption)}
+                              style={{
+                                padding: isLargeScreen ? '12px 16px' : '14px 16px',
+                                cursor: 'pointer',
+                                fontSize: isLargeScreen ? '16px' : '14px',
+                                color: '#1F2937',
+                                borderBottom:
+                                  index < filteredTitles.length - 1 ? '1px solid #E5E7EB' : 'none',
+                                backgroundColor: titleOption === 'CUSTOM' ? '#F9FAFB' : '#ffffff',
+                                fontWeight: titleOption === 'CUSTOM' ? '600' : 'normal',
+                                ...(isLargeScreen
+                                  ? {}
+                                  : {
+                                      minHeight: '44px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                    }),
+                              }}
+                              onMouseOver={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  titleOption === 'CUSTOM' ? '#F3F4F6' : '#F9FAFB';
+                              }}
+                              onMouseOut={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  titleOption === 'CUSTOM' ? '#F9FAFB' : '#ffffff';
+                              }}
+                            >
+                              {titleOption}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div>
+                      <input
+                        type="text"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        placeholder="Enter custom title..."
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          fontSize: '14px',
+                          border: '1px solid #ddd',
+                          borderRadius: '8px',
+                          boxSizing: 'border-box',
+                          backgroundColor: 'white',
+                          color: '#555',
+                          outline: 'none',
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          setIsCustomTitle(false);
+                          setIsDropdownOpen(true);
+                        }}
+                        style={{
+                          marginTop: '5px',
+                          padding: '5px 10px',
+                          fontSize: '12px',
+                          backgroundColor: '#6B7280',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Back to list
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            
+              {/* Company Field */}
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>Company</label>
+                <input
+                  type="text"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    fontSize: '14px',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    boxSizing: 'border-box',
+                    backgroundColor: 'white',
+                    color: '#555',
+                    outline: 'none',
+                  }}
+                />
+              </div>
 
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>About / Description</label>
-              <textarea
-                value={about}
-                onChange={(e) => setAbout(e.target.value)}
-                rows={4}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  fontSize: '14px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  boxSizing: 'border-box',
-                  outline: 'none',
-                  resize: 'vertical'
-                }}
-              />
+              {/* Location Dropdown with Search */}
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>
+                  Location
+                </label>
+                <LocationSelect
+                  value={cardLocation}
+                  onChange={(val: string) => setCardLocation(val)}
+                  placeholder="Search city…"
+                />
+              </div>
+
+              <div style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', fontSize: '13px', color: '#555', marginBottom: '5px' }}>About / Description</label>
+                <textarea
+                  value={about}
+                  onChange={(e) => setAbout(e.target.value)}
+                  rows={4}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    fontSize: '14px',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    boxSizing: 'border-box',
+                    outline: 'none',
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
+
+              {/* --- FIELDS MOVED TO "Fields" TAB --- */}
             </div>
-            
-            {/* --- FIELDS MOVED TO "Fields" TAB --- */}
-
           </div>
         );
       case 'Fields':
